@@ -2,8 +2,11 @@ package funnelfox
 
 import (
 	"encoding/json"
+	"fmt"
 	"time"
 )
+
+const timeFormat = "2006-01-02T15:04:05.999999"
 
 // Response FunnelFox Billing API 响应结构
 type Response struct {
@@ -147,12 +150,12 @@ type PricePoint struct {
 	Currency                     Currency            `json:"currency"`
 	IntroType                    IntroType           `json:"intro_type"`
 	Features                     []Feature           `json:"features"`
-	LifetimePrice                *string             `json:"lifetime_price,omitempty"`
-	IntroFreeTrialPeriod         *int                `json:"intro_free_trial_period,omitempty"`
-	IntroFreeTrialPeriodDuration *PeriodDurationUnit `json:"intro_free_trial_period_duration,omitempty"`
-	IntroPaidTrialPrice          *string             `json:"intro_paid_trial_price,omitempty"`
-	IntroPaidTrialPeriod         *int                `json:"intro_paid_trial_period,omitempty"`
-	IntroPaidTrialPeriodDuration *PeriodDurationUnit `json:"intro_paid_trial_period_duration,omitempty"`
+	LifetimePrice                *string             `json:"lifetime_price"`
+	IntroFreeTrialPeriod         *int                `json:"intro_free_trial_period"`
+	IntroFreeTrialPeriodDuration *PeriodDurationUnit `json:"intro_free_trial_period_duration"`
+	IntroPaidTrialPrice          *string             `json:"intro_paid_trial_price"`
+	IntroPaidTrialPeriod         *int                `json:"intro_paid_trial_period"`
+	IntroPaidTrialPeriodDuration *PeriodDurationUnit `json:"intro_paid_trial_period_duration"`
 	NextPrice                    *string             `json:"next_price"`
 	NextPeriod                   *int                `json:"next_period"`
 	NextPeriodDuration           *PeriodDurationUnit `json:"next_period_duration"`
@@ -231,7 +234,7 @@ func parseTimePointer(s string) *time.Time {
 	if s == "" {
 		return nil
 	}
-	t, err := time.Parse(time.RFC3339Nano, s)
+	t, err := time.Parse(timeFormat, s)
 	if err != nil {
 		return nil
 	}
@@ -264,4 +267,273 @@ func (raw rawMyAssetsResponse) toMyAssetsResponse() *MyAssetsResponse {
 		})
 	}
 	return &res
+}
+
+// ===== Events =====
+
+// Order 订单信息
+type Order struct {
+	OrderID              string         `json:"order_id"`
+	Amount               string         `json:"amount"`
+	CurrencyCode         string         `json:"currency_code"`
+	ExternalID           string         `json:"external_id"`
+	SubsID               string         `json:"subs_id"`
+	UserUUID             string         `json:"user_uuid"`
+	OneoffID             *string        `json:"oneoff_id"`
+	InitialOrderMetadata map[string]any `json:"initial_order_metadata"`
+}
+
+// EventPayload 事件载荷接口
+type EventPayload interface {
+	SubscriptionEventPayload | OrderEventPayload
+}
+
+// SubscriptionEventPayload 订阅事件载荷
+type SubscriptionEventPayload struct {
+	Subscription Subscription `json:"subscription"`
+}
+
+// OrderEventPayload 订单事件载荷
+type OrderEventPayload struct {
+	Order Order `json:"order"`
+}
+
+type EventType string
+
+const (
+	EventTypeSubscription EventType = "subscription"
+	EventTypeOrder        EventType = "order"
+)
+
+// Event 通用事件结构（泛型）
+type Event[T EventPayload] struct {
+	EventID        string    `json:"event_id"`
+	EventTimestamp time.Time `json:"event_timestamp"`
+	EventType      EventType `json:"event_type"`
+	Subtype        string    `json:"subtype"`
+	ExternalID     *string   `json:"external_id,omitempty"`
+	IsLivemode     *bool     `json:"is_livemode,omitempty"`
+	Payload        T         `json:"-"` // Not serialized directly, inlined via custom MarshalJSON
+}
+
+// SubscriptionEvent 订阅事件
+type SubscriptionEvent Event[SubscriptionEventPayload]
+
+// MarshalJSON inlines the payload fields into the event JSON
+func (e SubscriptionEvent) MarshalJSON() ([]byte, error) {
+	aux := &struct {
+		EventID        string       `json:"event_id"`
+		EventTimestamp time.Time    `json:"event_timestamp"`
+		EventType      EventType    `json:"event_type"`
+		Subtype        string       `json:"subtype"`
+		ExternalID     *string      `json:"external_id,omitempty"`
+		IsLivemode     *bool        `json:"is_livemode,omitempty"`
+		Subscription   Subscription `json:"subscription"`
+	}{
+		EventID:        e.EventID,
+		EventTimestamp: e.EventTimestamp,
+		EventType:      e.EventType,
+		Subtype:        e.Subtype,
+		ExternalID:     e.ExternalID,
+		IsLivemode:     e.IsLivemode,
+		Subscription:   e.Payload.Subscription,
+	}
+	return json.Marshal(aux)
+}
+
+// OrderEvent 订单事件
+type OrderEvent Event[OrderEventPayload]
+
+// MarshalJSON inlines the payload fields into the event JSON
+func (e OrderEvent) MarshalJSON() ([]byte, error) {
+	aux := &struct {
+		EventID        string    `json:"event_id"`
+		EventTimestamp time.Time `json:"event_timestamp"`
+		EventType      EventType `json:"event_type"`
+		Subtype        string    `json:"subtype"`
+		ExternalID     *string   `json:"external_id,omitempty"`
+		IsLivemode     *bool     `json:"is_livemode,omitempty"`
+		Order          Order     `json:"order"`
+	}{
+		EventID:        e.EventID,
+		EventTimestamp: e.EventTimestamp,
+		EventType:      e.EventType,
+		Subtype:        e.Subtype,
+		ExternalID:     e.ExternalID,
+		IsLivemode:     e.IsLivemode,
+		Order:          e.Payload.Order,
+	}
+	return json.Marshal(aux)
+}
+
+// rawEventBase 原始事件基础结构（用于解析）
+type rawEventBase struct {
+	EventID        string          `json:"event_id"`
+	EventTimestamp string          `json:"event_timestamp"`
+	EventType      string          `json:"event_type"`
+	Subtype        string          `json:"subtype"`
+	ExternalID     *string         `json:"external_id,omitempty"`
+	IsLivemode     *bool           `json:"is_livemode,omitempty"`
+	Payload        json.RawMessage `json:"-"` // Will be extracted based on event_type
+}
+
+// rawSubscriptionEvent 原始订阅事件（用于解析）
+type rawSubscriptionEvent struct {
+	rawEventBase
+	Subscription rawSubscription `json:"subscription"`
+}
+
+// rawOrderEvent 原始订单事件（用于解析）
+type rawOrderEvent struct {
+	rawEventBase
+	Order struct {
+		Amount               string         `json:"amount"`
+		CurrencyCode         string         `json:"currency_code"`
+		ExternalID           string         `json:"external_id"`
+		InitialOrderMetadata map[string]any `json:"initial_order_metadata"`
+		OneoffID             *string        `json:"oneoff_id"`
+		OrderID              string         `json:"order_id"`
+		SubsID               string         `json:"subs_id"`
+		UserUUID             string         `json:"user_uuid"`
+	} `json:"order"`
+}
+
+// parseEventTimestamp 解析事件时间戳
+func parseEventTimestamp(s string) (time.Time, error) {
+	return time.Parse(timeFormat, s)
+}
+
+// parseSubscriptionEvent 解析订阅事件
+func parseSubscriptionEvent(data []byte) (*SubscriptionEvent, error) {
+	var raw rawSubscriptionEvent
+	if err := json.Unmarshal(data, &raw); err != nil {
+		return nil, err
+	}
+
+	eventTimestamp, err := parseEventTimestamp(raw.EventTimestamp)
+	if err != nil {
+		return nil, err
+	}
+
+	// 转换 rawSubscription 为 Subscription
+	startedAt := parseTimePointer(raw.Subscription.StartedAt)
+	currStart := parseTimePointer(raw.Subscription.CurrentPeriodStartsAt)
+	currEnd := parseTimePointer(raw.Subscription.CurrentPeriodEndsAt)
+	nextCheck := parseTimePointer(raw.Subscription.NextCheckAt)
+
+	subscription := Subscription{
+		subscriptionField:     raw.Subscription.subscriptionField,
+		StartedAt:             startedAt,
+		CurrentPeriodStartsAt: currStart,
+		CurrentPeriodEndsAt:   currEnd,
+		NextCheckAt:           nextCheck,
+	}
+
+	event := SubscriptionEvent{
+		EventID:        raw.EventID,
+		EventTimestamp: eventTimestamp,
+		EventType:      EventType(raw.EventType),
+		Subtype:        raw.Subtype,
+		ExternalID:     raw.ExternalID,
+		IsLivemode:     raw.IsLivemode,
+		Payload: SubscriptionEventPayload{
+			Subscription: subscription,
+		},
+	}
+	return &event, nil
+}
+
+// parseOrderEvent 解析订单事件
+func parseOrderEvent(data []byte) (*OrderEvent, error) {
+	var raw rawOrderEvent
+	if err := json.Unmarshal(data, &raw); err != nil {
+		return nil, err
+	}
+
+	eventTimestamp, err := parseEventTimestamp(raw.EventTimestamp)
+	if err != nil {
+		return nil, err
+	}
+
+	order := Order{
+		OrderID:              raw.Order.OrderID,
+		Amount:               raw.Order.Amount,
+		CurrencyCode:         raw.Order.CurrencyCode,
+		ExternalID:           raw.Order.ExternalID,
+		SubsID:               raw.Order.SubsID,
+		UserUUID:             raw.Order.UserUUID,
+		OneoffID:             raw.Order.OneoffID,
+		InitialOrderMetadata: raw.Order.InitialOrderMetadata,
+	}
+
+	event := OrderEvent{
+		EventID:        raw.EventID,
+		EventTimestamp: eventTimestamp,
+		EventType:      EventType(raw.EventType),
+		Subtype:        raw.Subtype,
+		ExternalID:     raw.ExternalID,
+		IsLivemode:     raw.IsLivemode,
+		Payload: OrderEventPayload{
+			Order: order,
+		},
+	}
+	return &event, nil
+}
+
+// ParseEvent 泛型函数，解析 []byte 为指定类型的事件对象
+// 示例：event, err := ParseEvent[SubscriptionEvent](data)
+func ParseEvent[T SubscriptionEvent | OrderEvent](data []byte) (*T, error) {
+	var base rawEventBase
+	if err := json.Unmarshal(data, &base); err != nil {
+		return nil, err
+	}
+
+	var result any
+	var err error
+
+	switch base.EventType {
+	case "subscription":
+		var subEvent *SubscriptionEvent
+		subEvent, err = parseSubscriptionEvent(data)
+		if err != nil {
+			return nil, err
+		}
+		result = subEvent
+	case "order":
+		var orderEvent *OrderEvent
+		orderEvent, err = parseOrderEvent(data)
+		if err != nil {
+			return nil, err
+		}
+		result = orderEvent
+	default:
+		return nil, fmt.Errorf("unknown event_type: %s", base.EventType)
+	}
+
+	// 类型断言并验证
+	if typed, ok := result.(*T); ok {
+		return typed, nil
+	}
+
+	// 类型不匹配的情况
+	var zeroPtr *T
+	return zeroPtr, fmt.Errorf("event_type %s does not match requested type", base.EventType)
+}
+
+// ParseEventAuto 自动推断事件类型并解析
+// 返回类型为 any，需要使用类型断言
+func ParseEventAuto(data []byte) (any, error) {
+	var base rawEventBase
+	if err := json.Unmarshal(data, &base); err != nil {
+		return nil, err
+	}
+
+	switch base.EventType {
+	case "subscription":
+		return parseSubscriptionEvent(data)
+	case "order":
+		return parseOrderEvent(data)
+	default:
+		return nil, fmt.Errorf("unknown event_type: %s", base.EventType)
+	}
 }
