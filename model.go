@@ -55,8 +55,8 @@ type DisableAutoRenewRequest struct {
 type MigrationStrategy string
 
 const (
-	MigrationStrategyDelayedStart = "delayed_start"
-	MigrationStrategyPriceProrate = "price_prorate"
+	MigrationStrategyDelayedStart MigrationStrategy = "delayed_start"
+	MigrationStrategyPriceProrate MigrationStrategy = "price_prorate"
 )
 
 // SubscriptionMigrationRequest 订阅迁移请求
@@ -305,15 +305,42 @@ const (
 	EventTypeOrder        EventType = "order"
 )
 
+type EventSubtype string
+
+const (
+	EventSubtypeSubscriptionStartingTrial       EventSubtype = "starting_trial"
+	EventSubtypeSubscriptionConversion          EventSubtype = "conversion"
+	EventSubtypeSubscriptionRenewing            EventSubtype = "renewing"
+	EventSubtypeSubscriptionUnsubscribed        EventSubtype = "unsubscribed"
+	EventSubtypeSubscriptionPausing             EventSubtype = "pausing"
+	EventSubtypeSubscriptionDeferring           EventSubtype = "deferring"
+	EventSubtypeSubscriptionResuming            EventSubtype = "resuming"
+	EventSubtypeSubscriptionRecoveringAutorenew EventSubtype = "recovering_autorenew"
+	EventSubtypeSubscriptionExpiration          EventSubtype = "expiration"
+	EventSubtypeSubscriptionUnknown             EventSubtype = "unknown"
+	EventSubtypeSubscriptionStartGrace          EventSubtype = "start_grace"
+	EventSubtypeSubscriptionStartRetry          EventSubtype = "start_retry"
+	EventSubtypeSubscriptionFinishGrace         EventSubtype = "finish_grace"
+	EventSubtypeSubscriptionRecovering          EventSubtype = "recovering"
+
+	EventSubtypeOrderSettled  EventSubtype = "settled"
+	EventSubtypeOrderDeclined EventSubtype = "declined"
+
+	EventSubtypeOneoffGranted EventSubtype = "granted"
+	EventSubtypeOneoffRevoked EventSubtype = "revoked"
+
+	EventSubtypeRefund EventSubtype = "refund"
+)
+
 // Event 通用事件结构（泛型）
 type Event[T EventPayload] struct {
-	EventID        string    `json:"event_id"`
-	EventTimestamp time.Time `json:"event_timestamp"`
-	EventType      EventType `json:"event_type"`
-	Subtype        string    `json:"subtype"`
-	ExternalID     *string   `json:"external_id,omitempty"`
-	IsLivemode     *bool     `json:"is_livemode,omitempty"`
-	Payload        T         `json:"-"` // Not serialized directly, inlined via custom MarshalJSON
+	EventID        string       `json:"event_id"`
+	EventTimestamp time.Time    `json:"event_timestamp"`
+	EventType      EventType    `json:"event_type"`
+	Subtype        EventSubtype `json:"subtype"`
+	ExternalID     *string      `json:"external_id,omitempty"`
+	IsLivemode     *bool        `json:"is_livemode,omitempty"`
+	Payload        T            `json:"-"` // Not serialized directly, inlined via custom MarshalJSON
 }
 
 // SubscriptionEvent 订阅事件
@@ -325,7 +352,7 @@ func (e SubscriptionEvent) MarshalJSON() ([]byte, error) {
 		EventID        string       `json:"event_id"`
 		EventTimestamp time.Time    `json:"event_timestamp"`
 		EventType      EventType    `json:"event_type"`
-		Subtype        string       `json:"subtype"`
+		Subtype        EventSubtype `json:"subtype"`
 		ExternalID     *string      `json:"external_id,omitempty"`
 		IsLivemode     *bool        `json:"is_livemode,omitempty"`
 		Subscription   Subscription `json:"subscription"`
@@ -347,13 +374,13 @@ type OrderEvent Event[OrderEventPayload]
 // MarshalJSON inlines the payload fields into the event JSON
 func (e OrderEvent) MarshalJSON() ([]byte, error) {
 	aux := &struct {
-		EventID        string    `json:"event_id"`
-		EventTimestamp time.Time `json:"event_timestamp"`
-		EventType      EventType `json:"event_type"`
-		Subtype        string    `json:"subtype"`
-		ExternalID     *string   `json:"external_id,omitempty"`
-		IsLivemode     *bool     `json:"is_livemode,omitempty"`
-		Order          Order     `json:"order"`
+		EventID        string       `json:"event_id"`
+		EventTimestamp time.Time    `json:"event_timestamp"`
+		EventType      EventType    `json:"event_type"`
+		Subtype        EventSubtype `json:"subtype"`
+		ExternalID     *string      `json:"external_id,omitempty"`
+		IsLivemode     *bool        `json:"is_livemode,omitempty"`
+		Order          Order        `json:"order"`
 	}{
 		EventID:        e.EventID,
 		EventTimestamp: e.EventTimestamp,
@@ -371,7 +398,7 @@ type rawEventBase struct {
 	EventID        string          `json:"event_id"`
 	EventTimestamp string          `json:"event_timestamp"`
 	EventType      string          `json:"event_type"`
-	Subtype        string          `json:"subtype"`
+	Subtype        EventSubtype    `json:"subtype"`
 	ExternalID     *string         `json:"external_id,omitempty"`
 	IsLivemode     *bool           `json:"is_livemode,omitempty"`
 	Payload        json.RawMessage `json:"-"` // Will be extracted based on event_type
