@@ -70,6 +70,31 @@ type SubscriptionMigrationRequest struct {
 	DryRun     *bool             `json:"dry_run"`
 }
 
+type CheckoutStatus string
+
+const (
+	CheckoutStatusProcessing CheckoutStatus = "processing"
+	CheckoutStatusSucceeded  CheckoutStatus = "succeeded"
+	CheckoutStatusFailed     CheckoutStatus = "failed"
+	CheckoutStatusCancelled  CheckoutStatus = "cancelled"
+)
+
+// PaymentResult 支付结果
+type PaymentResult struct {
+	ActionRequiredToken  string         `json:"action_required_token"`
+	CheckoutStatus       CheckoutStatus `json:"checkout_status"`
+	FailedMessageForUser string         `json:"failed_message_for_user"`
+	OrderID              *string        `json:"order_id"`
+}
+
+// SubscriptionMigrationResponse 订阅迁移响应
+type SubscriptionMigrationResponse struct {
+	PaymentResult PaymentResult `json:"payment_result"`
+	ChargedAmount int           `json:"charged_amount"`
+	SubsID        *string       `json:"subs_id"`
+	OneoffID      *string       `json:"oneoff_id"`
+}
+
 // DiscountRequest 折扣请求
 type DiscountRequest struct {
 	ExternalID        string  `json:"external_id"` // 订阅的外部ID
