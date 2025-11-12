@@ -170,8 +170,12 @@ func (c *Client) DisableAutoRenew(req DisableAutoRenewRequest) *Error {
 }
 
 // SubscriptionMigration 迁移订阅到另一个价格点
-func (c *Client) SubscriptionMigration(req SubscriptionMigrationRequest) *Error {
-	return c.doRequest("/subscription/migration", req, nil, true)
+func (c *Client) SubscriptionMigration(req SubscriptionMigrationRequest) (*SubscriptionMigrationResponse, *Error) {
+	var resp SubscriptionMigrationResponse
+	if err := c.doRequest("/subscription/migration", req, &resp, true); err != nil {
+		return nil, err
+	}
+	return &resp, nil
 }
 
 // ApplyDiscount 应用百分比折扣
