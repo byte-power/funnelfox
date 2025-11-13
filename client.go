@@ -219,3 +219,12 @@ func (c *Client) GetMyAssets(req MyAssetsRequest) (*MyAssetsResponse, *Error) {
 	}
 	return resp.toMyAssetsResponse(), nil
 }
+
+// GetPaymentsHistory 获取支付历史
+func (c *Client) GetPaymentsHistory(req PaymentsHistoryRequest) (*PaymentsHistoryResponse, *Error) {
+	var resp rawPaymentsHistoryResponse
+	if err := c.doRequest("/payments_history", req, &resp, true); err != nil {
+		return nil, err
+	}
+	return resp.toPaymentsHistoryResponse(), nil
+}

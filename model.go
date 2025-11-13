@@ -34,6 +34,69 @@ type RefundRequest struct {
 	SoftRefund *bool   `json:"soft_refund,omitempty"` // 是否软退款（可选）
 }
 
+// PaymentsHistoryRequest 支付历史请求
+type PaymentsHistoryRequest struct {
+	ExternalID string `json:"external_id"`
+}
+
+// rawPayment 原始支付信息（用于解析）
+type rawPayment struct {
+	Amount        string   `json:"amount"`
+	CreatedAt     string   `json:"created_at"`
+	Currency      Currency `json:"currency"`
+	Last4         string   `json:"last4"`
+	Network       string   `json:"network"`
+	OneoffID      *string  `json:"oneoff_id"`
+	OrderID       string   `json:"order_id"`
+	PaymentMethod string   `json:"payment_method"`
+	Refunded      string   `json:"refunded"`
+	SubsID        string   `json:"subs_id"`
+}
+
+// Payment 支付信息
+type Payment struct {
+	Amount        string     `json:"amount"`
+	CreatedAt     *time.Time `json:"created_at"`
+	Currency      Currency   `json:"currency"`
+	Last4         string     `json:"last4"`
+	Network       string     `json:"network"`
+	OneoffID      *string    `json:"oneoff_id"`
+	OrderID       string     `json:"order_id"`
+	PaymentMethod string     `json:"payment_method"`
+	Refunded      string     `json:"refunded"`
+	SubsID        string     `json:"subs_id"`
+}
+
+// rawPaymentsHistoryResponse 原始支付历史响应
+type rawPaymentsHistoryResponse struct {
+	Payments []rawPayment `json:"payments"`
+}
+
+// PaymentsHistoryResponse 支付历史响应
+type PaymentsHistoryResponse struct {
+	Payments []Payment `json:"payments"`
+}
+
+func (raw rawPaymentsHistoryResponse) toPaymentsHistoryResponse() *PaymentsHistoryResponse {
+	var res PaymentsHistoryResponse
+	for _, rawPayment := range raw.Payments {
+		createdAt := parseTimePointer(rawPayment.CreatedAt)
+		res.Payments = append(res.Payments, Payment{
+			Amount:        rawPayment.Amount,
+			CreatedAt:     createdAt,
+			Currency:      rawPayment.Currency,
+			Last4:         rawPayment.Last4,
+			Network:       rawPayment.Network,
+			OneoffID:      rawPayment.OneoffID,
+			OrderID:       rawPayment.OrderID,
+			PaymentMethod: rawPayment.PaymentMethod,
+			Refunded:      rawPayment.Refunded,
+			SubsID:        rawPayment.SubsID,
+		})
+	}
+	return &res
+}
+
 // ===== Subscription Management =====
 
 // EnableAutoRenewRequest 启用自动续费请求
