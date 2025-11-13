@@ -285,7 +285,7 @@ type Order struct {
 
 // EventPayload 事件载荷接口
 type EventPayload interface {
-	SubscriptionEventPayload | OrderEventPayload
+	SubscriptionEventPayload | OrderEventPayload | RefundEventPayload
 }
 
 // SubscriptionEventPayload 订阅事件载荷
@@ -303,13 +303,14 @@ type EventType string
 const (
 	EventTypeSubscription EventType = "subscription"
 	EventTypeOrder        EventType = "order"
+	EventTypeRefund       EventType = "refund"
 )
 
 type EventSubtype string
 
 const (
 	EventSubtypeSubscriptionStartingTrial       EventSubtype = "starting_trial"
-	EventSubtypeSubscriptionConversion          EventSubtype = "conversion"
+	EventSubtypeSubscriptionConversion          EventSubtype = "convertion"
 	EventSubtypeSubscriptionRenewing            EventSubtype = "renewing"
 	EventSubtypeSubscriptionUnsubscribed        EventSubtype = "unsubscribed"
 	EventSubtypeSubscriptionPausing             EventSubtype = "pausing"
@@ -329,7 +330,7 @@ const (
 	EventSubtypeOneoffGranted EventSubtype = "granted"
 	EventSubtypeOneoffRevoked EventSubtype = "revoked"
 
-	EventSubtypeRefund EventSubtype = "refund"
+	EventSubtypeRefundSettled EventSubtype = "settled"
 )
 
 // Event 通用事件结构（泛型）
@@ -341,6 +342,13 @@ type Event[T EventPayload] struct {
 	ExternalID     *string      `json:"external_id,omitempty"`
 	IsLivemode     *bool        `json:"is_livemode,omitempty"`
 	Payload        T            `json:"-"` // Not serialized directly, inlined via custom MarshalJSON
+	*refundInfo    `json:",inline,omitempty"`
+}
+
+type refundInfo struct {
+	AmountRefunded string `json:"amount_refunded"`
+	OrderID        string `json:"order_id"`
+	TrxID          string `json:"trx_id"`
 }
 
 // SubscriptionEvent 订阅事件
@@ -393,11 +401,15 @@ func (e OrderEvent) MarshalJSON() ([]byte, error) {
 	return json.Marshal(aux)
 }
 
+type RefundEvent Event[RefundEventPayload]
+
+type RefundEventPayload struct{}
+
 // rawEventBase 原始事件基础结构（用于解析）
 type rawEventBase struct {
 	EventID        string          `json:"event_id"`
 	EventTimestamp string          `json:"event_timestamp"`
-	EventType      string          `json:"event_type"`
+	EventType      EventType       `json:"event_type"`
 	Subtype        EventSubtype    `json:"subtype"`
 	ExternalID     *string         `json:"external_id,omitempty"`
 	IsLivemode     *bool           `json:"is_livemode,omitempty"`
@@ -459,7 +471,7 @@ func parseSubscriptionEvent(data []byte) (*SubscriptionEvent, error) {
 	event := SubscriptionEvent{
 		EventID:        raw.EventID,
 		EventTimestamp: eventTimestamp,
-		EventType:      EventType(raw.EventType),
+		EventType:      raw.EventType,
 		Subtype:        raw.Subtype,
 		ExternalID:     raw.ExternalID,
 		IsLivemode:     raw.IsLivemode,
@@ -496,7 +508,7 @@ func parseOrderEvent(data []byte) (*OrderEvent, error) {
 	event := OrderEvent{
 		EventID:        raw.EventID,
 		EventTimestamp: eventTimestamp,
-		EventType:      EventType(raw.EventType),
+		EventType:      raw.EventType,
 		Subtype:        raw.Subtype,
 		ExternalID:     raw.ExternalID,
 		IsLivemode:     raw.IsLivemode,
@@ -509,7 +521,7 @@ func parseOrderEvent(data []byte) (*OrderEvent, error) {
 
 // ParseEvent 泛型函数，解析 []byte 为指定类型的事件对象
 // 示例：event, err := ParseEvent[SubscriptionEvent](data)
-func ParseEvent[T SubscriptionEvent | OrderEvent](data []byte) (*T, error) {
+func ParseEvent[T SubscriptionEvent | OrderEvent | RefundEvent](data []byte) (*T, error) {
 	var base rawEventBase
 	if err := json.Unmarshal(data, &base); err != nil {
 		return nil, err
@@ -519,20 +531,27 @@ func ParseEvent[T SubscriptionEvent | OrderEvent](data []byte) (*T, error) {
 	var err error
 
 	switch base.EventType {
-	case "subscription":
+	case EventTypeSubscription:
 		var subEvent *SubscriptionEvent
 		subEvent, err = parseSubscriptionEvent(data)
 		if err != nil {
 			return nil, err
 		}
 		result = subEvent
-	case "order":
+	case EventTypeOrder:
 		var orderEvent *OrderEvent
 		orderEvent, err = parseOrderEvent(data)
 		if err != nil {
 			return nil, err
 		}
 		result = orderEvent
+	case EventTypeRefund:
+		var refundEvent *RefundEvent
+		refundEvent, err = parseRefundEvent(data)
+		if err != nil {
+			return nil, err
+		}
+		result = refundEvent
 	default:
 		return nil, fmt.Errorf("unknown event_type: %s", base.EventType)
 	}
@@ -547,6 +566,41 @@ func ParseEvent[T SubscriptionEvent | OrderEvent](data []byte) (*T, error) {
 	return zeroPtr, fmt.Errorf("event_type %s does not match requested type", base.EventType)
 }
 
+func parseRefundEvent(data []byte) (*RefundEvent, error) {
+	type rawRefundEvent struct {
+		EventID        string       `json:"event_id"`
+		EventTimestamp string       `json:"event_timestamp"`
+		EventType      EventType    `json:"event_type"`
+		Subtype        EventSubtype `json:"subtype"`
+		ExternalID     string       `json:"external_id"`
+		AmountRefunded string       `json:"amount_refunded"`
+		OrderID        string       `json:"order_id"`
+		TrxID          string       `json:"trx_id"`
+	}
+	var raw rawRefundEvent
+	if err := json.Unmarshal(data, &raw); err != nil {
+		return nil, err
+	}
+	parsedTime, err := time.Parse(timeFormat, raw.EventTimestamp)
+	if err != nil {
+		return nil, err
+	}
+	event := &RefundEvent{
+		EventID:        raw.EventID,
+		EventTimestamp: parsedTime,
+		EventType:      raw.EventType,
+		Subtype:        raw.Subtype,
+		ExternalID:     &raw.ExternalID,
+		refundInfo: &refundInfo{
+			AmountRefunded: raw.AmountRefunded,
+			OrderID:        raw.OrderID,
+			TrxID:          raw.TrxID,
+		},
+		Payload: RefundEventPayload{},
+	}
+	return event, nil
+}
+
 // ParseEventAuto 自动推断事件类型并解析
 // 返回类型为 any，需要使用类型断言
 func ParseEventAuto(data []byte) (any, error) {
@@ -556,10 +610,12 @@ func ParseEventAuto(data []byte) (any, error) {
 	}
 
 	switch base.EventType {
-	case "subscription":
+	case EventTypeSubscription:
 		return parseSubscriptionEvent(data)
-	case "order":
+	case EventTypeOrder:
 		return parseOrderEvent(data)
+	case EventTypeRefund:
+		return parseRefundEvent(data)
 	default:
 		return nil, fmt.Errorf("unknown event_type: %s", base.EventType)
 	}
