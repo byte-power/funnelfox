@@ -90,7 +90,7 @@ type PaymentResult struct {
 // SubscriptionMigrationResponse 订阅迁移响应
 type SubscriptionMigrationResponse struct {
 	PaymentResult PaymentResult `json:"payment_result"`
-	ChargedAmount int           `json:"charged_amount"`
+	ChargedAmount any           `json:"charged_amount"`
 	SubsID        *string       `json:"subs_id"`
 	OneoffID      *string       `json:"oneoff_id"`
 }
