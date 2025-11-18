@@ -400,7 +400,7 @@ const (
 	EventSubtypeSubscriptionStartingTrial       EventSubtype = "starting_trial"
 	EventSubtypeSubscriptionConversion          EventSubtype = "convertion"
 	EventSubtypeSubscriptionRenewing            EventSubtype = "renewing"
-	EventSubtypeSubscriptionUnsubscribed        EventSubtype = "unsubscribed"
+	EventSubtypeSubscriptionUnsubscription      EventSubtype = "unsubscription"
 	EventSubtypeSubscriptionPausing             EventSubtype = "pausing"
 	EventSubtypeSubscriptionDeferring           EventSubtype = "deferring"
 	EventSubtypeSubscriptionResuming            EventSubtype = "resuming"
