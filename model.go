@@ -464,6 +464,32 @@ func (e SubscriptionEvent) MarshalJSON() ([]byte, error) {
 	return json.Marshal(aux)
 }
 
+// UnmarshalJSON extracts the inlined payload fields from the event JSON
+func (e *SubscriptionEvent) UnmarshalJSON(data []byte) error {
+	aux := &struct {
+		EventID        string       `json:"event_id"`
+		EventTimestamp time.Time    `json:"event_timestamp"`
+		EventType      EventType    `json:"event_type"`
+		Subtype        EventSubtype `json:"subtype"`
+		ExternalID     *string      `json:"external_id,omitempty"`
+		IsLivemode     *bool        `json:"is_livemode,omitempty"`
+		Subscription   Subscription `json:"subscription"`
+	}{}
+	if err := json.Unmarshal(data, aux); err != nil {
+		return err
+	}
+	e.EventID = aux.EventID
+	e.EventTimestamp = aux.EventTimestamp
+	e.EventType = aux.EventType
+	e.Subtype = aux.Subtype
+	e.ExternalID = aux.ExternalID
+	e.IsLivemode = aux.IsLivemode
+	e.Payload = SubscriptionEventPayload{
+		Subscription: aux.Subscription,
+	}
+	return nil
+}
+
 // OrderEvent 订单事件
 type OrderEvent Event[OrderEventPayload]
 
@@ -487,6 +513,32 @@ func (e OrderEvent) MarshalJSON() ([]byte, error) {
 		Order:          e.Payload.Order,
 	}
 	return json.Marshal(aux)
+}
+
+// UnmarshalJSON extracts the inlined payload fields from the event JSON
+func (e *OrderEvent) UnmarshalJSON(data []byte) error {
+	aux := &struct {
+		EventID        string       `json:"event_id"`
+		EventTimestamp time.Time    `json:"event_timestamp"`
+		EventType      EventType    `json:"event_type"`
+		Subtype        EventSubtype `json:"subtype"`
+		ExternalID     *string      `json:"external_id,omitempty"`
+		IsLivemode     *bool        `json:"is_livemode,omitempty"`
+		Order          Order        `json:"order"`
+	}{}
+	if err := json.Unmarshal(data, aux); err != nil {
+		return err
+	}
+	e.EventID = aux.EventID
+	e.EventTimestamp = aux.EventTimestamp
+	e.EventType = aux.EventType
+	e.Subtype = aux.Subtype
+	e.ExternalID = aux.ExternalID
+	e.IsLivemode = aux.IsLivemode
+	e.Payload = OrderEventPayload{
+		Order: aux.Order,
+	}
+	return nil
 }
 
 type RefundEvent Event[RefundEventPayload]
