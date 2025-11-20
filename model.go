@@ -131,6 +131,7 @@ type SubscriptionMigrationRequest struct {
 	Comment    *string           `json:"comment,omitempty"`
 	Strategy   MigrationStrategy `json:"strategy"`
 	DryRun     *bool             `json:"dry_run"`
+	StrictMode *bool             `json:"strict_mode"`
 }
 
 type CheckoutStatus string
