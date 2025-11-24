@@ -61,7 +61,6 @@ func NewClientWithHTTPClient(orgID, secretKey string, httpClient *http.Client, l
 // doRequest 执行 HTTP POST 请求
 func (c *Client) doRequest(endpoint string, requestBody, response any, withSecretKey bool) *Error {
 	url := c.baseURL + endpoint
-
 	var bodyReader io.Reader
 	if requestBody != nil {
 		bodyBytes, err := json.Marshal(requestBody)
@@ -204,6 +203,24 @@ func (c *Client) ResumeSubscription(req SubscriptionResumeRequest) *Error {
 func (c *Client) ListPricePoints(req PricePointsListRequest) (*PricePointsListResponse, *Error) {
 	var resp PricePointsListResponse
 	if err := c.doRequest("/price_points", req, &resp, false); err != nil {
+		return nil, err
+	}
+	return &resp, nil
+}
+
+// CreateFeature 创建 feature
+func (c *Client) CreateFeature(req FeatureCreateRequest) (*FeatureCreateResponse, *Error) {
+	var resp FeatureCreateResponse
+	if err := c.doRequest("/feature/create", req, &resp, true); err != nil {
+		return nil, err
+	}
+	return &resp, nil
+}
+
+// CreatePricePoint 创建 price point
+func (c *Client) CreatePricePoint(req PricePointCreateRequest) (*PricePointCreateResponse, *Error) {
+	var resp PricePointCreateResponse
+	if err := c.doRequest("/pp/create", req, &resp, true); err != nil {
 		return nil, err
 	}
 	return &resp, nil
