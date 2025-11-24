@@ -202,6 +202,40 @@ type PricePointsListRequest struct {
 	Ident *string `json:"ident,omitempty"` // 可选：按标识过滤
 }
 
+type PricePointCreateRequest struct {
+	Ident                        string             `json:"ident,omitempty"`
+	IntroType                    IntroType          `json:"intro_type,omitempty"`
+	CurrencyCode                 string             `json:"currency_code,omitempty"`
+	LifetimePrice                float64            `json:"lifetime_price,omitempty"`
+	IntroFreeTrialPeriod         int                `json:"intro_free_trial_period,omitempty"`
+	IntroFreeTrialPeriodDuration PeriodDurationUnit `json:"intro_free_trial_period_duration,omitempty"`
+	IntroPaidTrialPrice          float64            `json:"intro_paid_trial_price,omitempty"`
+	IntroPaidTrialPeriod         int                `json:"intro_paid_trial_period,omitempty"`
+	IntroPaidTrialPeriodDuration PeriodDurationUnit `json:"intro_paid_trial_period_duration,omitempty"`
+	NextPrice                    float64            `json:"next_price,omitempty"`
+	NextPeriod                   int                `json:"next_period,omitempty"`
+	NextPeriodDuration           PeriodDurationUnit `json:"next_period_duration,omitempty"`
+	Descriptor                   string             `json:"descriptor,omitempty"`
+	Features                     []string           `json:"features,omitempty"`
+}
+
+type PricePointCreateResponse struct{}
+
+type FeatureType string
+
+const (
+	FeatureTypeTimebased  = "timebased"
+	FeatureTypeLifetime   = "lifetime"
+	FeatureTypeConsumable = "consumable"
+)
+
+type FeatureCreateRequest struct {
+	Ident       string      `json:"ident,omitempty"`
+	FeatureType FeatureType `json:"feature_type"`
+}
+
+type FeatureCreateResponse struct{}
+
 // Currency 货币信息
 type Currency struct {
 	Code       string `json:"code"`        // 货币代码（如 USD）
