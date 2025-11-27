@@ -39,6 +39,16 @@ type PaymentsHistoryRequest struct {
 	ExternalID string `json:"external_id"`
 }
 
+// OneClickPurchaseRequest 一键购买请求
+type OneClickPurchaseRequest struct {
+	ExternalID     string         `json:"external_id"`               // 用户外部ID
+	PPIdent        string         `json:"pp_ident"`                  // 价格点标识
+	ClientMetadata map[string]any `json:"client_metadata,omitempty"` // 客户端元数据（可选）
+}
+
+// OneClickPurchaseResponse 一键购买响应
+type OneClickPurchaseResponse PaymentResult
+
 // rawPayment 原始支付信息（用于解析）
 type rawPayment struct {
 	Amount        string   `json:"amount"`

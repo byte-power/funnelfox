@@ -156,6 +156,15 @@ func (c *Client) Refund(req RefundRequest) *Error {
 	return nil
 }
 
+// OneClickPurchase 执行一键购买（使用用户保存的支付方式）
+func (c *Client) OneClickPurchase(req OneClickPurchaseRequest) (*OneClickPurchaseResponse, *Error) {
+	var resp OneClickPurchaseResponse
+	if err := c.doRequest("/checkout/one_click", req, &resp, false); err != nil {
+		return nil, err
+	}
+	return &resp, nil
+}
+
 // ===== Subscription Management =====
 
 // EnableAutoRenew 启用自动续费
