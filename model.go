@@ -305,7 +305,7 @@ type MyAssetsRequest struct {
 	ExternalID string `json:"external_id"` // 用户外部ID
 }
 
-type subscriptionField struct {
+type SubscriptionField struct {
 	SubsID               string         `json:"subs_id"`
 	IsActive             bool           `json:"is_active"`
 	PricePoint           PricePoint     `json:"price_point"`
@@ -317,7 +317,7 @@ type subscriptionField struct {
 
 // rawSubscription 订阅信息
 type rawSubscription struct {
-	subscriptionField     `json:",inline"`
+	SubscriptionField     `json:",inline"`
 	StartedAt             string `json:"started_at"`
 	CurrentPeriodStartsAt string `json:"current_period_starts_at"`
 	CurrentPeriodEndsAt   string `json:"current_period_ends_at"`
@@ -325,14 +325,14 @@ type rawSubscription struct {
 }
 
 type Subscription struct {
-	subscriptionField     `json:",inline"`
+	SubscriptionField     `json:",inline"`
 	StartedAt             *time.Time `json:"started_at"`
 	CurrentPeriodStartsAt *time.Time `json:"current_period_starts_at"`
 	CurrentPeriodEndsAt   *time.Time `json:"current_period_ends_at"`
 	NextCheckAt           *time.Time `json:"next_check_at"`
 }
 
-type oneoffField struct {
+type OneoffField struct {
 	OneoffID             string         `json:"oneoff_id"` // 订单ID
 	OrderID              string         `json:"order_id"`
 	IsActive             bool           `json:"is_active"`
@@ -342,13 +342,13 @@ type oneoffField struct {
 
 // rawOneOffPurchase 一次性购买
 type rawOneOffPurchase struct {
-	oneoffField `json:",inline"`
+	OneoffField `json:",inline"`
 	StartedAt   string `json:"started_at"`
 	RevokedAt   string `json:"revoked_at"`
 }
 
 type OneOffPurchase struct {
-	oneoffField `json:",inline"`
+	OneoffField `json:",inline"`
 	StartedAt   *time.Time `json:"started_at"`
 	RevokedAt   *time.Time `json:"revoked_at"`
 }
@@ -383,7 +383,7 @@ func (raw rawMyAssetsResponse) toMyAssetsResponse() *MyAssetsResponse {
 		currEnd := parseTimePointer(rawSub.CurrentPeriodEndsAt)
 		nextCheck := parseTimePointer(rawSub.NextCheckAt)
 		res.Subscriptions = append(res.Subscriptions, Subscription{
-			subscriptionField:     rawSub.subscriptionField,
+			SubscriptionField:     rawSub.SubscriptionField,
 			StartedAt:             startedAt,
 			CurrentPeriodStartsAt: currStart,
 			CurrentPeriodEndsAt:   currEnd,
@@ -395,7 +395,7 @@ func (raw rawMyAssetsResponse) toMyAssetsResponse() *MyAssetsResponse {
 		startedAt := parseTimePointer(rawOneoff.StartedAt)
 		revokedAt := parseTimePointer(rawOneoff.RevokedAt)
 		res.OneOffPurchases = append(res.OneOffPurchases, OneOffPurchase{
-			oneoffField: rawOneoff.oneoffField,
+			OneoffField: rawOneoff.OneoffField,
 			StartedAt:   startedAt,
 			RevokedAt:   revokedAt,
 		})
@@ -411,7 +411,7 @@ const (
 	OrderStatusCancelled  OrderStatus = "cancelled"
 )
 
-type orderField struct {
+type OrderField struct {
 	OrderID              string         `json:"order_id"`
 	Amount               string         `json:"amount"`
 	CurrencyCode         string         `json:"currency_code"`
@@ -427,13 +427,13 @@ type orderField struct {
 }
 
 type rawOrder struct {
-	orderField `json:",inline"`
+	OrderField `json:",inline"`
 	CreatedAt  string `json:"created_at"`
 }
 
 // Order 订单信息
 type Order struct {
-	orderField `json:",inline"`
+	OrderField `json:",inline"`
 	CreatedAt  *time.Time `json:"created_at"`
 }
 
@@ -481,7 +481,7 @@ type Event struct {
 	Subtype        EventSubtype `json:"subtype"`
 	ExternalID     *string      `json:"external_id,omitempty"`
 	IsLivemode     *bool        `json:"is_livemode,omitempty"`
-	*refundInfo    `json:",inline,omitempty"`
+	*RefundInfo    `json:",inline,omitempty"`
 	User           struct {
 		Email      string `json:"email"`
 		ExternalID string `json:"external_id"`
@@ -491,20 +491,20 @@ type Event struct {
 	Oneoff       *OneOffPurchase `json:"oneoff"`
 }
 
-type refundInfoField struct {
+type RefundInfoField struct {
 	AmountRefunded string `json:"amount_refunded"`
 	OrderID        string `json:"order_id"`
 	TrxID          string `json:"trx_id"`
 	CurrencyCode   string `json:"currency_code"`
 }
 
-type rawRefundInfo struct {
-	refundInfoField `json:",inline"`
+type RawRefundInfo struct {
+	RefundInfoField `json:",inline"`
 	CreatedAt       string `json:"created_at"`
 }
 
-type refundInfo struct {
-	refundInfoField `json:",inline"`
+type RefundInfo struct {
+	RefundInfoField `json:",inline"`
 	CreatedAt       *time.Time `json:"created_at"`
 }
 
@@ -515,7 +515,7 @@ type rawEvent struct {
 	Subtype        EventSubtype `json:"subtype"`
 	ExternalID     *string      `json:"external_id,omitempty"`
 	IsLivemode     *bool        `json:"is_livemode,omitempty"`
-	*rawRefundInfo `json:",inline,omitempty"`
+	*RawRefundInfo `json:",inline,omitempty"`
 	User           struct {
 		Email      string `json:"email"`
 		ExternalID string `json:"external_id"`
@@ -554,7 +554,7 @@ func ParseEvent(data []byte) (*Event, error) {
 	// 转换 rawSubscription 为 Subscription
 	if raw.Subscription != nil {
 		event.Subscription = &Subscription{
-			subscriptionField:     raw.Subscription.subscriptionField,
+			SubscriptionField:     raw.Subscription.SubscriptionField,
 			StartedAt:             parseTimePointer(raw.Subscription.StartedAt),
 			CurrentPeriodStartsAt: parseTimePointer(raw.Subscription.CurrentPeriodStartsAt),
 			CurrentPeriodEndsAt:   parseTimePointer(raw.Subscription.CurrentPeriodEndsAt),
@@ -563,21 +563,21 @@ func ParseEvent(data []byte) (*Event, error) {
 	}
 	if raw.Order != nil {
 		event.Order = &Order{
-			orderField: raw.Order.orderField,
+			OrderField: raw.Order.OrderField,
 			CreatedAt:  parseTimePointer(raw.Order.CreatedAt),
 		}
 	}
 	if raw.Oneoff != nil {
 		event.Oneoff = &OneOffPurchase{
-			oneoffField: raw.Oneoff.oneoffField,
+			OneoffField: raw.Oneoff.OneoffField,
 			StartedAt:   parseTimePointer(raw.Oneoff.StartedAt),
 			RevokedAt:   parseTimePointer(raw.Oneoff.RevokedAt),
 		}
 	}
-	if raw.rawRefundInfo != nil {
-		event.refundInfo = &refundInfo{
-			refundInfoField: raw.rawRefundInfo.refundInfoField,
-			CreatedAt:       parseTimePointer(raw.rawRefundInfo.CreatedAt),
+	if raw.RawRefundInfo != nil {
+		event.RefundInfo = &RefundInfo{
+			RefundInfoField: raw.RawRefundInfo.RefundInfoField,
+			CreatedAt:       parseTimePointer(raw.RawRefundInfo.CreatedAt),
 		}
 	}
 
