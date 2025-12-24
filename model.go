@@ -163,10 +163,11 @@ type PaymentResult struct {
 
 // SubscriptionMigrationResponse 订阅迁移响应
 type SubscriptionMigrationResponse struct {
-	PaymentResult PaymentResult `json:"payment_result"`
-	ChargedAmount any           `json:"charged_amount"`
-	SubsID        *string       `json:"subs_id"`
-	OneoffID      *string       `json:"oneoff_id"`
+	MigrationStrategy MigrationStrategy `json:"migration_strategy"`
+	PaymentResult     PaymentResult     `json:"payment_result"`
+	ChargedAmount     any               `json:"charged_amount"`
+	SubsID            *string           `json:"subs_id"`
+	OneoffID          *string           `json:"oneoff_id"`
 }
 
 // DiscountRequest 折扣请求
@@ -443,20 +444,21 @@ const (
 type EventSubtype string
 
 const (
-	EventSubtypeSubscriptionStartingTrial       EventSubtype = "starting_trial"
-	EventSubtypeSubscriptionConversion          EventSubtype = "convertion"
-	EventSubtypeSubscriptionRenewing            EventSubtype = "renewing"
-	EventSubtypeSubscriptionUnsubscription      EventSubtype = "unsubscription"
-	EventSubtypeSubscriptionPausing             EventSubtype = "pausing"
-	EventSubtypeSubscriptionDeferring           EventSubtype = "deferring"
-	EventSubtypeSubscriptionResuming            EventSubtype = "resuming"
-	EventSubtypeSubscriptionRecoveringAutorenew EventSubtype = "recovering_autorenew"
-	EventSubtypeSubscriptionExpiration          EventSubtype = "expiration"
-	EventSubtypeSubscriptionUnknown             EventSubtype = "unknown"
-	EventSubtypeSubscriptionStartGrace          EventSubtype = "start_grace"
-	EventSubtypeSubscriptionStartRetry          EventSubtype = "start_retry"
-	EventSubtypeSubscriptionFinishGrace         EventSubtype = "finish_grace"
-	EventSubtypeSubscriptionRecovering          EventSubtype = "recovering"
+	EventSubtypeSubscriptionStartingTrial                 EventSubtype = "starting_trial"
+	EventSubtypeSubscriptionConversion                    EventSubtype = "convertion"
+	EventSubtypeSubscriptionRenewing                      EventSubtype = "renewing"
+	EventSubtypeSubscriptionUnsubscription                EventSubtype = "unsubscription"
+	EventSubtypeSubscriptionPausing                       EventSubtype = "pausing"
+	EventSubtypeSubscriptionDeferring                     EventSubtype = "deferring"
+	EventSubtypeSubscriptionResuming                      EventSubtype = "resuming"
+	EventSubtypeSubscriptionRecoveringAutorenew           EventSubtype = "recovering_autorenew"
+	EventSubtypeSubscriptionExpiration                    EventSubtype = "expiration"
+	EventSubtypeSubscriptionUnknown                       EventSubtype = "unknown"
+	EventSubtypeSubscriptionStartGrace                    EventSubtype = "start_grace"
+	EventSubtypeSubscriptionStartRetry                    EventSubtype = "start_retry"
+	EventSubtypeSubscriptionFinishGrace                   EventSubtype = "finish_grace"
+	EventSubtypeSubscriptionRecovering                    EventSubtype = "recovering"
+	EventSubtypeSubscriptionPlanningPostponedSubscription EventSubtype = "planning_postponed_subscription"
 
 	EventSubtypeOrderSettled  EventSubtype = "settled"
 	EventSubtypeOrderDeclined EventSubtype = "declined"
