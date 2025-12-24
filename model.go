@@ -313,6 +313,7 @@ type subscriptionField struct {
 	Status               []string       `json:"status"`
 	AvailableActions     []string       `json:"available_actions"`
 	InitialOrderMetadata map[string]any `json:"initial_order_metadata"`
+	Iteration            int            `json:"iteration"`
 }
 
 // rawSubscription 订阅信息
