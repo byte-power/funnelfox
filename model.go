@@ -107,6 +107,206 @@ func (raw rawPaymentsHistoryResponse) toPaymentsHistoryResponse() *PaymentsHisto
 	return &res
 }
 
+// TransactionReportRequest 获取所有交易请求
+type TransactionReportRequest struct {
+	LastTransactionDate string  `json:"last_transaction_date"` // 最后交易日期（RFC3339 格式）
+	SubsID              *string `json:"subs_id,omitempty"`     // 订阅ID（可选）
+	OrderID             *string `json:"order_id,omitempty"`    // 订单ID（可选）
+	OneoffID            *string `json:"oneoff_id,omitempty"`   // 一次性购买ID（可选）
+	Limit               *int    `json:"limit,omitempty"`       // 限制返回数量（可选，默认100，范围1-500）
+}
+
+// rawTransaction 原始交易信息（用于解析）
+type rawTransaction struct {
+	OrderID                             string  `json:"order_id"`
+	PPID                                int     `json:"pp_id"`
+	PPVersion                           int     `json:"pp_version"`
+	Status                              string  `json:"status"`
+	IsCIT                               bool    `json:"is_cit"`
+	IntegrationType                     string  `json:"integration_type"`
+	Region                              string  `json:"region"`
+	Amount                              string  `json:"amount"`
+	CurrencyCode                        string  `json:"currency_code"`
+	TrxID                               string  `json:"trx_id"`
+	PSP                                 string  `json:"psp"`
+	PSPTransactionID                    string  `json:"psp_transaction_id"`
+	AmountUSD                           string  `json:"amount_usd"`
+	IsFallback                          bool    `json:"is_fallback"`
+	PSPMerchantID                       string  `json:"psp_merchant_id"`
+	PSPTransactionType                  string  `json:"psp_transaction_type"`
+	PSPStatus                           string  `json:"psp_status"`
+	PSPDate                             string  `json:"psp_date"`
+	PSPCardTokenType                    *string `json:"psp_card_token_type"`
+	PSPReasonMessage                    *string `json:"psp_reason_message"`
+	PSPReasonType                       *string `json:"psp_reason_type"`
+	PSPReasonCode                       *string `json:"psp_reason_code"`
+	PSPReasonDeclineType                *string `json:"psp_reason_decline_type"`
+	TrxCreatedAt                        string  `json:"trx_created_at"`
+	MetaSubsID                          *string `json:"meta_subs_id"`
+	MetaSubsIteration                   *string `json:"meta_subs_iteration"`
+	MetaRetryStep                       *string `json:"meta_retry_step"`
+	MetaOneoffID                        *string `json:"meta_oneoff_id"`
+	MetaClientFFProjectID               *string `json:"meta_client_ff_project_id"`
+	MetaClientFFSessionID               *string `json:"meta_client_ff_session_id"`
+	MetaClientFFPriceID                 *string `json:"meta_client_ff_price_id"`
+	PMType                              string  `json:"pm_type"`
+	ThreeDSChallengeIssued              *bool   `json:"threeds_challenge_issued"`
+	ThreeDSProtocolVersion              *string `json:"threeds_protocol_version"`
+	ThreeDSResponseCode                 *string `json:"threeds_response_code"`
+	ThreeDSReasonCode                   *string `json:"threeds_reason_code"`
+	ThreeDSReasonText                   *string `json:"threeds_reason_text"`
+	AuthorizationType                   string  `json:"authorization_type"`
+	IsVaulted                           bool    `json:"is_vaulted"`
+	PMDataBinAccountFundingType         *string `json:"pm_data_bin_account_funding_type"`
+	PMDataBinAccountNumberType          *string `json:"pm_data_bin_account_number_type"`
+	PMDataBinIssuerName                 *string `json:"pm_data_bin_issuer_name"`
+	PMDataBinIssuerCountryCode          *string `json:"pm_data_bin_issuer_country_code"`
+	PMDataBinIssuerCurrencyCode         *string `json:"pm_data_bin_issuer_currency_code"`
+	Network                             *string `json:"network"`
+	PMDataBinPrepaidReloadableIndicator *string `json:"pm_data_bin_prepaid_reloadable_indicator"`
+	PMDataBinProductCode                *string `json:"pm_data_bin_product_code"`
+	PMDataBinProductName                *string `json:"pm_data_bin_product_name"`
+	PMDataBinProductUsageType           *string `json:"pm_data_bin_product_usage_type"`
+	PMDataBinRegionalRestriction        *string `json:"pm_data_bin_regional_restriction"`
+	PMDataExpirationDate                *string `json:"pm_data_expiration_date"`
+	PMDataFirst6                        *string `json:"pm_data_first6"`
+	PMDataLast4                         *string `json:"pm_data_last4"`
+	PMDataIsNetworkTokenized            *bool   `json:"pm_data_is_network_tokenized"`
+}
+
+// Transaction 交易信息
+type Transaction struct {
+	OrderID                             string     `json:"order_id"`
+	PPID                                int        `json:"pp_id"`
+	PPVersion                           int        `json:"pp_version"`
+	Status                              string     `json:"status"`
+	IsCIT                               bool       `json:"is_cit"`
+	IntegrationType                     string     `json:"integration_type"`
+	Region                              string     `json:"region"`
+	Amount                              string     `json:"amount"`
+	CurrencyCode                        string     `json:"currency_code"`
+	TrxID                               string     `json:"trx_id"`
+	PSP                                 string     `json:"psp"`
+	PSPTransactionID                    string     `json:"psp_transaction_id"`
+	AmountUSD                           string     `json:"amount_usd"`
+	IsFallback                          bool       `json:"is_fallback"`
+	PSPMerchantID                       string     `json:"psp_merchant_id"`
+	PSPTransactionType                  string     `json:"psp_transaction_type"`
+	PSPStatus                           string     `json:"psp_status"`
+	PSPDate                             *time.Time `json:"psp_date"`
+	PSPCardTokenType                    *string    `json:"psp_card_token_type"`
+	PSPReasonMessage                    *string    `json:"psp_reason_message"`
+	PSPReasonType                       *string    `json:"psp_reason_type"`
+	PSPReasonCode                       *string    `json:"psp_reason_code"`
+	PSPReasonDeclineType                *string    `json:"psp_reason_decline_type"`
+	TrxCreatedAt                        *time.Time `json:"trx_created_at"`
+	MetaSubsID                          *string    `json:"meta_subs_id"`
+	MetaSubsIteration                   *string    `json:"meta_subs_iteration"`
+	MetaRetryStep                       *string    `json:"meta_retry_step"`
+	MetaOneoffID                        *string    `json:"meta_oneoff_id"`
+	MetaClientFFProjectID               *string    `json:"meta_client_ff_project_id"`
+	MetaClientFFSessionID               *string    `json:"meta_client_ff_session_id"`
+	MetaClientFFPriceID                 *string    `json:"meta_client_ff_price_id"`
+	PMType                              string     `json:"pm_type"`
+	ThreeDSChallengeIssued              *bool      `json:"threeds_challenge_issued"`
+	ThreeDSProtocolVersion              *string    `json:"threeds_protocol_version"`
+	ThreeDSResponseCode                 *string    `json:"threeds_response_code"`
+	ThreeDSReasonCode                   *string    `json:"threeds_reason_code"`
+	ThreeDSReasonText                   *string    `json:"threeds_reason_text"`
+	AuthorizationType                   string     `json:"authorization_type"`
+	IsVaulted                           bool       `json:"is_vaulted"`
+	PMDataBinAccountFundingType         *string    `json:"pm_data_bin_account_funding_type"`
+	PMDataBinAccountNumberType          *string    `json:"pm_data_bin_account_number_type"`
+	PMDataBinIssuerName                 *string    `json:"pm_data_bin_issuer_name"`
+	PMDataBinIssuerCountryCode          *string    `json:"pm_data_bin_issuer_country_code"`
+	PMDataBinIssuerCurrencyCode         *string    `json:"pm_data_bin_issuer_currency_code"`
+	Network                             *string    `json:"network"`
+	PMDataBinPrepaidReloadableIndicator *string    `json:"pm_data_bin_prepaid_reloadable_indicator"`
+	PMDataBinProductCode                *string    `json:"pm_data_bin_product_code"`
+	PMDataBinProductName                *string    `json:"pm_data_bin_product_name"`
+	PMDataBinProductUsageType           *string    `json:"pm_data_bin_product_usage_type"`
+	PMDataBinRegionalRestriction        *string    `json:"pm_data_bin_regional_restriction"`
+	PMDataExpirationDate                *string    `json:"pm_data_expiration_date"`
+	PMDataFirst6                        *string    `json:"pm_data_first6"`
+	PMDataLast4                         *string    `json:"pm_data_last4"`
+	PMDataIsNetworkTokenized            *bool      `json:"pm_data_is_network_tokenized"`
+}
+
+// rawTransactionReportResponse 原始交易报告响应
+type rawTransactionReportResponse struct {
+	Transactions []rawTransaction `json:"transactions"`
+}
+
+// TransactionReportResponse 交易报告响应
+type TransactionReportResponse struct {
+	Transactions []Transaction `json:"transactions"`
+}
+
+func (raw rawTransactionReportResponse) toTransactionReportResponse() *TransactionReportResponse {
+	var res TransactionReportResponse
+	for _, rawTx := range raw.Transactions {
+		pspDate := parseTimePointer(rawTx.PSPDate)
+		trxCreatedAt := parseTimePointer(rawTx.TrxCreatedAt)
+		res.Transactions = append(res.Transactions, Transaction{
+			OrderID:                             rawTx.OrderID,
+			PPID:                                rawTx.PPID,
+			PPVersion:                           rawTx.PPVersion,
+			Status:                              rawTx.Status,
+			IsCIT:                               rawTx.IsCIT,
+			IntegrationType:                     rawTx.IntegrationType,
+			Region:                              rawTx.Region,
+			Amount:                              rawTx.Amount,
+			CurrencyCode:                        rawTx.CurrencyCode,
+			TrxID:                               rawTx.TrxID,
+			PSP:                                 rawTx.PSP,
+			PSPTransactionID:                    rawTx.PSPTransactionID,
+			AmountUSD:                           rawTx.AmountUSD,
+			IsFallback:                          rawTx.IsFallback,
+			PSPMerchantID:                       rawTx.PSPMerchantID,
+			PSPTransactionType:                  rawTx.PSPTransactionType,
+			PSPStatus:                           rawTx.PSPStatus,
+			PSPDate:                             pspDate,
+			PSPCardTokenType:                    rawTx.PSPCardTokenType,
+			PSPReasonMessage:                    rawTx.PSPReasonMessage,
+			PSPReasonType:                       rawTx.PSPReasonType,
+			PSPReasonCode:                       rawTx.PSPReasonCode,
+			PSPReasonDeclineType:                rawTx.PSPReasonDeclineType,
+			TrxCreatedAt:                        trxCreatedAt,
+			MetaSubsID:                          rawTx.MetaSubsID,
+			MetaSubsIteration:                   rawTx.MetaSubsIteration,
+			MetaRetryStep:                       rawTx.MetaRetryStep,
+			MetaOneoffID:                        rawTx.MetaOneoffID,
+			MetaClientFFProjectID:               rawTx.MetaClientFFProjectID,
+			MetaClientFFSessionID:               rawTx.MetaClientFFSessionID,
+			MetaClientFFPriceID:                 rawTx.MetaClientFFPriceID,
+			PMType:                              rawTx.PMType,
+			ThreeDSChallengeIssued:              rawTx.ThreeDSChallengeIssued,
+			ThreeDSProtocolVersion:              rawTx.ThreeDSProtocolVersion,
+			ThreeDSResponseCode:                 rawTx.ThreeDSResponseCode,
+			ThreeDSReasonCode:                   rawTx.ThreeDSReasonCode,
+			ThreeDSReasonText:                   rawTx.ThreeDSReasonText,
+			AuthorizationType:                   rawTx.AuthorizationType,
+			IsVaulted:                           rawTx.IsVaulted,
+			PMDataBinAccountFundingType:         rawTx.PMDataBinAccountFundingType,
+			PMDataBinAccountNumberType:          rawTx.PMDataBinAccountNumberType,
+			PMDataBinIssuerName:                 rawTx.PMDataBinIssuerName,
+			PMDataBinIssuerCountryCode:          rawTx.PMDataBinIssuerCountryCode,
+			PMDataBinIssuerCurrencyCode:         rawTx.PMDataBinIssuerCurrencyCode,
+			Network:                             rawTx.Network,
+			PMDataBinPrepaidReloadableIndicator: rawTx.PMDataBinPrepaidReloadableIndicator,
+			PMDataBinProductCode:                rawTx.PMDataBinProductCode,
+			PMDataBinProductName:                rawTx.PMDataBinProductName,
+			PMDataBinProductUsageType:           rawTx.PMDataBinProductUsageType,
+			PMDataBinRegionalRestriction:        rawTx.PMDataBinRegionalRestriction,
+			PMDataExpirationDate:                rawTx.PMDataExpirationDate,
+			PMDataFirst6:                        rawTx.PMDataFirst6,
+			PMDataLast4:                         rawTx.PMDataLast4,
+			PMDataIsNetworkTokenized:            rawTx.PMDataIsNetworkTokenized,
+		})
+	}
+	return &res
+}
+
 // ===== Subscription Management =====
 
 // EnableAutoRenewRequest 启用自动续费请求
