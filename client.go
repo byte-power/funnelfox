@@ -254,3 +254,12 @@ func (c *Client) GetPaymentsHistory(req PaymentsHistoryRequest) (*PaymentsHistor
 	}
 	return resp.toPaymentsHistoryResponse(), nil
 }
+
+// GetTransactionReport 获取所有交易
+func (c *Client) GetTransactionReport(req TransactionReportRequest) (*TransactionReportResponse, *Error) {
+	var resp rawTransactionReportResponse
+	if err := c.doRequest("/transaction_report", req, &resp, true); err != nil {
+		return nil, err
+	}
+	return resp.toTransactionReportResponse(), nil
+}
