@@ -2,7 +2,6 @@ package funnelfox
 
 import (
 	"encoding/json"
-	"fmt"
 	"time"
 )
 
@@ -30,7 +29,7 @@ type RefundRequest struct {
 	OrderID    string  `json:"order_id"`         // 订单ID
 	Reason     *string `json:"reason,omitempty"` // 退款原因（可选）
 	Comment    *string `json:"comment,omitempty"`
-	Amount     *int    `json:"amount,omitempty"`      // 退款金额（可选，用于部分退款）
+	Amount     *string `json:"amount,omitempty"`      // 退款金额（可选，用于部分退款）
 	SoftRefund *bool   `json:"soft_refund,omitempty"` // 是否软退款（可选）
 }
 
@@ -507,7 +506,7 @@ type MyAssetsRequest struct {
 	ExternalID string `json:"external_id"` // 用户外部ID
 }
 
-type subscriptionField struct {
+type SubscriptionField struct {
 	SubsID               string         `json:"subs_id"`
 	IsActive             bool           `json:"is_active"`
 	PricePoint           PricePoint     `json:"price_point"`
@@ -519,7 +518,7 @@ type subscriptionField struct {
 
 // rawSubscription 订阅信息
 type rawSubscription struct {
-	subscriptionField     `json:",inline"`
+	SubscriptionField     `json:",inline"`
 	StartedAt             string `json:"started_at"`
 	CurrentPeriodStartsAt string `json:"current_period_starts_at"`
 	CurrentPeriodEndsAt   string `json:"current_period_ends_at"`
@@ -527,15 +526,16 @@ type rawSubscription struct {
 }
 
 type Subscription struct {
-	subscriptionField     `json:",inline"`
+	SubscriptionField     `json:",inline"`
 	StartedAt             *time.Time `json:"started_at"`
 	CurrentPeriodStartsAt *time.Time `json:"current_period_starts_at"`
 	CurrentPeriodEndsAt   *time.Time `json:"current_period_ends_at"`
 	NextCheckAt           *time.Time `json:"next_check_at"`
 }
 
-type oneoffField struct {
+type OneoffField struct {
 	OneoffID             string         `json:"oneoff_id"` // 订单ID
+	OrderID              string         `json:"order_id"`
 	IsActive             bool           `json:"is_active"`
 	PricePoint           PricePoint     `json:"price_point"`
 	InitialOrderMetadata map[string]any `json:"initial_order_metadata"`
@@ -543,13 +543,13 @@ type oneoffField struct {
 
 // rawOneOffPurchase 一次性购买
 type rawOneOffPurchase struct {
-	oneoffField `json:",inline"`
+	OneoffField `json:",inline"`
 	StartedAt   string `json:"started_at"`
 	RevokedAt   string `json:"revoked_at"`
 }
 
 type OneOffPurchase struct {
-	oneoffField `json:",inline"`
+	OneoffField `json:",inline"`
 	StartedAt   *time.Time `json:"started_at"`
 	RevokedAt   *time.Time `json:"revoked_at"`
 }
@@ -557,12 +557,12 @@ type OneOffPurchase struct {
 // rawMyAssetsResponse 用户资产响应
 type rawMyAssetsResponse struct {
 	Subscriptions   []rawSubscription   `json:"subscriptions"`
-	OneOffPurchases []rawOneOffPurchase `json:"one_off_purchases"`
+	OneOffPurchases []rawOneOffPurchase `json:"oneoffs"`
 }
 
 type MyAssetsResponse struct {
 	Subscriptions   []Subscription   `json:"subscriptions"`
-	OneOffPurchases []OneOffPurchase `json:"one_off_purchases"`
+	OneOffPurchases []OneOffPurchase `json:"oneoffs"`
 }
 
 func parseTimePointer(s string) *time.Time {
@@ -584,7 +584,7 @@ func (raw rawMyAssetsResponse) toMyAssetsResponse() *MyAssetsResponse {
 		currEnd := parseTimePointer(rawSub.CurrentPeriodEndsAt)
 		nextCheck := parseTimePointer(rawSub.NextCheckAt)
 		res.Subscriptions = append(res.Subscriptions, Subscription{
-			subscriptionField:     rawSub.subscriptionField,
+			SubscriptionField:     rawSub.SubscriptionField,
 			StartedAt:             startedAt,
 			CurrentPeriodStartsAt: currStart,
 			CurrentPeriodEndsAt:   currEnd,
@@ -596,7 +596,7 @@ func (raw rawMyAssetsResponse) toMyAssetsResponse() *MyAssetsResponse {
 		startedAt := parseTimePointer(rawOneoff.StartedAt)
 		revokedAt := parseTimePointer(rawOneoff.RevokedAt)
 		res.OneOffPurchases = append(res.OneOffPurchases, OneOffPurchase{
-			oneoffField: rawOneoff.oneoffField,
+			OneoffField: rawOneoff.OneoffField,
 			StartedAt:   startedAt,
 			RevokedAt:   revokedAt,
 		})
@@ -604,33 +604,38 @@ func (raw rawMyAssetsResponse) toMyAssetsResponse() *MyAssetsResponse {
 	return &res
 }
 
-// ===== Events =====
+type OrderStatus string
 
-// Order 订单信息
-type Order struct {
+const (
+	OrderStatusAuthorized OrderStatus = "authorized"
+	OrderStatusSettled    OrderStatus = "settled"
+	OrderStatusCancelled  OrderStatus = "cancelled"
+)
+
+type OrderField struct {
 	OrderID              string         `json:"order_id"`
 	Amount               string         `json:"amount"`
 	CurrencyCode         string         `json:"currency_code"`
 	ExternalID           string         `json:"external_id"`
-	SubsID               string         `json:"subs_id"`
+	SubsID               *string        `json:"subs_id"`
 	UserUUID             string         `json:"user_uuid"`
 	OneoffID             *string        `json:"oneoff_id"`
 	InitialOrderMetadata map[string]any `json:"initial_order_metadata"`
+	Status               OrderStatus    `json:"status"`
+	DeclineReason        *any           `json:"decline_reason"`
+	RetryStep            *any           `json:"retry_step"`
+	PSP                  *string        `json:"psp"`
 }
 
-// EventPayload 事件载荷接口
-type EventPayload interface {
-	SubscriptionEventPayload | OrderEventPayload | RefundEventPayload
+type rawOrder struct {
+	OrderField `json:",inline"`
+	CreatedAt  string `json:"created_at"`
 }
 
-// SubscriptionEventPayload 订阅事件载荷
-type SubscriptionEventPayload struct {
-	Subscription Subscription `json:"subscription"`
-}
-
-// OrderEventPayload 订单事件载荷
-type OrderEventPayload struct {
-	Order Order `json:"order"`
+// Order 订单信息
+type Order struct {
+	OrderField `json:",inline"`
+	CreatedAt  *time.Time `json:"created_at"`
 }
 
 type EventType string
@@ -639,6 +644,7 @@ const (
 	EventTypeSubscription EventType = "subscription"
 	EventTypeOrder        EventType = "order"
 	EventTypeRefund       EventType = "refund"
+	EventTypeOneoff       EventType = "oneoff"
 )
 
 type EventSubtype string
@@ -670,159 +676,55 @@ const (
 )
 
 // Event 通用事件结构（泛型）
-type Event[T EventPayload] struct {
+type Event struct {
 	EventID        string       `json:"event_id"`
 	EventTimestamp time.Time    `json:"event_timestamp"`
 	EventType      EventType    `json:"event_type"`
 	Subtype        EventSubtype `json:"subtype"`
 	ExternalID     *string      `json:"external_id,omitempty"`
 	IsLivemode     *bool        `json:"is_livemode,omitempty"`
-	Payload        T            `json:"-"` // Not serialized directly, inlined via custom MarshalJSON
-	*refundInfo    `json:",inline,omitempty"`
+	*RefundInfo    `json:",inline,omitempty"`
+	User           struct {
+		Email      string `json:"email"`
+		ExternalID string `json:"external_id"`
+	} `json:"user"`
+	Subscription *Subscription   `json:"subscription"`
+	Order        *Order          `json:"order"`
+	Oneoff       *OneOffPurchase `json:"oneoff"`
 }
 
-type refundInfo struct {
+type RefundInfoField struct {
 	AmountRefunded string `json:"amount_refunded"`
 	OrderID        string `json:"order_id"`
 	TrxID          string `json:"trx_id"`
+	CurrencyCode   string `json:"currency_code"`
 }
 
-// SubscriptionEvent 订阅事件
-type SubscriptionEvent Event[SubscriptionEventPayload]
-
-// MarshalJSON inlines the payload fields into the event JSON
-func (e SubscriptionEvent) MarshalJSON() ([]byte, error) {
-	aux := &struct {
-		EventID        string       `json:"event_id"`
-		EventTimestamp time.Time    `json:"event_timestamp"`
-		EventType      EventType    `json:"event_type"`
-		Subtype        EventSubtype `json:"subtype"`
-		ExternalID     *string      `json:"external_id,omitempty"`
-		IsLivemode     *bool        `json:"is_livemode,omitempty"`
-		Subscription   Subscription `json:"subscription"`
-	}{
-		EventID:        e.EventID,
-		EventTimestamp: e.EventTimestamp,
-		EventType:      e.EventType,
-		Subtype:        e.Subtype,
-		ExternalID:     e.ExternalID,
-		IsLivemode:     e.IsLivemode,
-		Subscription:   e.Payload.Subscription,
-	}
-	return json.Marshal(aux)
+type RawRefundInfo struct {
+	RefundInfoField `json:",inline"`
+	CreatedAt       string `json:"created_at"`
 }
 
-// UnmarshalJSON extracts the inlined payload fields from the event JSON
-func (e *SubscriptionEvent) UnmarshalJSON(data []byte) error {
-	aux := &struct {
-		EventID        string       `json:"event_id"`
-		EventTimestamp time.Time    `json:"event_timestamp"`
-		EventType      EventType    `json:"event_type"`
-		Subtype        EventSubtype `json:"subtype"`
-		ExternalID     *string      `json:"external_id,omitempty"`
-		IsLivemode     *bool        `json:"is_livemode,omitempty"`
-		Subscription   Subscription `json:"subscription"`
-	}{}
-	if err := json.Unmarshal(data, aux); err != nil {
-		return err
-	}
-	e.EventID = aux.EventID
-	e.EventTimestamp = aux.EventTimestamp
-	e.EventType = aux.EventType
-	e.Subtype = aux.Subtype
-	e.ExternalID = aux.ExternalID
-	e.IsLivemode = aux.IsLivemode
-	e.Payload = SubscriptionEventPayload{
-		Subscription: aux.Subscription,
-	}
-	return nil
+type RefundInfo struct {
+	RefundInfoField `json:",inline"`
+	CreatedAt       *time.Time `json:"created_at"`
 }
 
-// OrderEvent 订单事件
-type OrderEvent Event[OrderEventPayload]
-
-// MarshalJSON inlines the payload fields into the event JSON
-func (e OrderEvent) MarshalJSON() ([]byte, error) {
-	aux := &struct {
-		EventID        string       `json:"event_id"`
-		EventTimestamp time.Time    `json:"event_timestamp"`
-		EventType      EventType    `json:"event_type"`
-		Subtype        EventSubtype `json:"subtype"`
-		ExternalID     *string      `json:"external_id,omitempty"`
-		IsLivemode     *bool        `json:"is_livemode,omitempty"`
-		Order          Order        `json:"order"`
-	}{
-		EventID:        e.EventID,
-		EventTimestamp: e.EventTimestamp,
-		EventType:      e.EventType,
-		Subtype:        e.Subtype,
-		ExternalID:     e.ExternalID,
-		IsLivemode:     e.IsLivemode,
-		Order:          e.Payload.Order,
-	}
-	return json.Marshal(aux)
-}
-
-// UnmarshalJSON extracts the inlined payload fields from the event JSON
-func (e *OrderEvent) UnmarshalJSON(data []byte) error {
-	aux := &struct {
-		EventID        string       `json:"event_id"`
-		EventTimestamp time.Time    `json:"event_timestamp"`
-		EventType      EventType    `json:"event_type"`
-		Subtype        EventSubtype `json:"subtype"`
-		ExternalID     *string      `json:"external_id,omitempty"`
-		IsLivemode     *bool        `json:"is_livemode,omitempty"`
-		Order          Order        `json:"order"`
-	}{}
-	if err := json.Unmarshal(data, aux); err != nil {
-		return err
-	}
-	e.EventID = aux.EventID
-	e.EventTimestamp = aux.EventTimestamp
-	e.EventType = aux.EventType
-	e.Subtype = aux.Subtype
-	e.ExternalID = aux.ExternalID
-	e.IsLivemode = aux.IsLivemode
-	e.Payload = OrderEventPayload{
-		Order: aux.Order,
-	}
-	return nil
-}
-
-type RefundEvent Event[RefundEventPayload]
-
-type RefundEventPayload struct{}
-
-// rawEventBase 原始事件基础结构（用于解析）
-type rawEventBase struct {
-	EventID        string          `json:"event_id"`
-	EventTimestamp string          `json:"event_timestamp"`
-	EventType      EventType       `json:"event_type"`
-	Subtype        EventSubtype    `json:"subtype"`
-	ExternalID     *string         `json:"external_id,omitempty"`
-	IsLivemode     *bool           `json:"is_livemode,omitempty"`
-	Payload        json.RawMessage `json:"-"` // Will be extracted based on event_type
-}
-
-// rawSubscriptionEvent 原始订阅事件（用于解析）
-type rawSubscriptionEvent struct {
-	rawEventBase
-	Subscription rawSubscription `json:"subscription"`
-}
-
-// rawOrderEvent 原始订单事件（用于解析）
-type rawOrderEvent struct {
-	rawEventBase
-	Order struct {
-		Amount               string         `json:"amount"`
-		CurrencyCode         string         `json:"currency_code"`
-		ExternalID           string         `json:"external_id"`
-		InitialOrderMetadata map[string]any `json:"initial_order_metadata"`
-		OneoffID             *string        `json:"oneoff_id"`
-		OrderID              string         `json:"order_id"`
-		SubsID               string         `json:"subs_id"`
-		UserUUID             string         `json:"user_uuid"`
-	} `json:"order"`
+type rawEvent struct {
+	EventID        string       `json:"event_id"`
+	EventTimestamp string       `json:"event_timestamp"`
+	EventType      EventType    `json:"event_type"`
+	Subtype        EventSubtype `json:"subtype"`
+	ExternalID     *string      `json:"external_id,omitempty"`
+	IsLivemode     *bool        `json:"is_livemode,omitempty"`
+	*RawRefundInfo `json:",inline,omitempty"`
+	User           struct {
+		Email      string `json:"email"`
+		ExternalID string `json:"external_id"`
+	} `json:"user"`
+	Subscription *rawSubscription   `json:"subscription"`
+	Order        *rawOrder          `json:"order"`
+	Oneoff       *rawOneOffPurchase `json:"oneoff"`
 }
 
 // parseEventTimestamp 解析事件时间戳
@@ -830,181 +732,56 @@ func parseEventTimestamp(s string) (time.Time, error) {
 	return time.Parse(timeFormat, s)
 }
 
-// parseSubscriptionEvent 解析订阅事件
-func parseSubscriptionEvent(data []byte) (*SubscriptionEvent, error) {
-	var raw rawSubscriptionEvent
+func ParseEvent(data []byte) (*Event, error) {
+	var raw rawEvent
 	if err := json.Unmarshal(data, &raw); err != nil {
 		return nil, err
+	}
+
+	event := Event{
+		EventID:    raw.EventID,
+		EventType:  raw.EventType,
+		Subtype:    raw.Subtype,
+		ExternalID: raw.ExternalID,
+		IsLivemode: raw.IsLivemode,
+		User:       raw.User,
 	}
 
 	eventTimestamp, err := parseEventTimestamp(raw.EventTimestamp)
 	if err != nil {
 		return nil, err
 	}
+	event.EventTimestamp = eventTimestamp
 
 	// 转换 rawSubscription 为 Subscription
-	startedAt := parseTimePointer(raw.Subscription.StartedAt)
-	currStart := parseTimePointer(raw.Subscription.CurrentPeriodStartsAt)
-	currEnd := parseTimePointer(raw.Subscription.CurrentPeriodEndsAt)
-	nextCheck := parseTimePointer(raw.Subscription.NextCheckAt)
-
-	subscription := Subscription{
-		subscriptionField:     raw.Subscription.subscriptionField,
-		StartedAt:             startedAt,
-		CurrentPeriodStartsAt: currStart,
-		CurrentPeriodEndsAt:   currEnd,
-		NextCheckAt:           nextCheck,
+	if raw.Subscription != nil {
+		event.Subscription = &Subscription{
+			SubscriptionField:     raw.Subscription.SubscriptionField,
+			StartedAt:             parseTimePointer(raw.Subscription.StartedAt),
+			CurrentPeriodStartsAt: parseTimePointer(raw.Subscription.CurrentPeriodStartsAt),
+			CurrentPeriodEndsAt:   parseTimePointer(raw.Subscription.CurrentPeriodEndsAt),
+			NextCheckAt:           parseTimePointer(raw.Subscription.NextCheckAt),
+		}
+	}
+	if raw.Order != nil {
+		event.Order = &Order{
+			OrderField: raw.Order.OrderField,
+			CreatedAt:  parseTimePointer(raw.Order.CreatedAt),
+		}
+	}
+	if raw.Oneoff != nil {
+		event.Oneoff = &OneOffPurchase{
+			OneoffField: raw.Oneoff.OneoffField,
+			StartedAt:   parseTimePointer(raw.Oneoff.StartedAt),
+			RevokedAt:   parseTimePointer(raw.Oneoff.RevokedAt),
+		}
+	}
+	if raw.RawRefundInfo != nil {
+		event.RefundInfo = &RefundInfo{
+			RefundInfoField: raw.RawRefundInfo.RefundInfoField,
+			CreatedAt:       parseTimePointer(raw.RawRefundInfo.CreatedAt),
+		}
 	}
 
-	event := SubscriptionEvent{
-		EventID:        raw.EventID,
-		EventTimestamp: eventTimestamp,
-		EventType:      raw.EventType,
-		Subtype:        raw.Subtype,
-		ExternalID:     raw.ExternalID,
-		IsLivemode:     raw.IsLivemode,
-		Payload: SubscriptionEventPayload{
-			Subscription: subscription,
-		},
-	}
 	return &event, nil
-}
-
-// parseOrderEvent 解析订单事件
-func parseOrderEvent(data []byte) (*OrderEvent, error) {
-	var raw rawOrderEvent
-	if err := json.Unmarshal(data, &raw); err != nil {
-		return nil, err
-	}
-
-	eventTimestamp, err := parseEventTimestamp(raw.EventTimestamp)
-	if err != nil {
-		return nil, err
-	}
-
-	order := Order{
-		OrderID:              raw.Order.OrderID,
-		Amount:               raw.Order.Amount,
-		CurrencyCode:         raw.Order.CurrencyCode,
-		ExternalID:           raw.Order.ExternalID,
-		SubsID:               raw.Order.SubsID,
-		UserUUID:             raw.Order.UserUUID,
-		OneoffID:             raw.Order.OneoffID,
-		InitialOrderMetadata: raw.Order.InitialOrderMetadata,
-	}
-
-	event := OrderEvent{
-		EventID:        raw.EventID,
-		EventTimestamp: eventTimestamp,
-		EventType:      raw.EventType,
-		Subtype:        raw.Subtype,
-		ExternalID:     raw.ExternalID,
-		IsLivemode:     raw.IsLivemode,
-		Payload: OrderEventPayload{
-			Order: order,
-		},
-	}
-	return &event, nil
-}
-
-// ParseEvent 泛型函数，解析 []byte 为指定类型的事件对象
-// 示例：event, err := ParseEvent[SubscriptionEvent](data)
-func ParseEvent[T SubscriptionEvent | OrderEvent | RefundEvent](data []byte) (*T, error) {
-	var base rawEventBase
-	if err := json.Unmarshal(data, &base); err != nil {
-		return nil, err
-	}
-
-	var result any
-	var err error
-
-	switch base.EventType {
-	case EventTypeSubscription:
-		var subEvent *SubscriptionEvent
-		subEvent, err = parseSubscriptionEvent(data)
-		if err != nil {
-			return nil, err
-		}
-		result = subEvent
-	case EventTypeOrder:
-		var orderEvent *OrderEvent
-		orderEvent, err = parseOrderEvent(data)
-		if err != nil {
-			return nil, err
-		}
-		result = orderEvent
-	case EventTypeRefund:
-		var refundEvent *RefundEvent
-		refundEvent, err = parseRefundEvent(data)
-		if err != nil {
-			return nil, err
-		}
-		result = refundEvent
-	default:
-		return nil, fmt.Errorf("unknown event_type: %s", base.EventType)
-	}
-
-	// 类型断言并验证
-	if typed, ok := result.(*T); ok {
-		return typed, nil
-	}
-
-	// 类型不匹配的情况
-	var zeroPtr *T
-	return zeroPtr, fmt.Errorf("event_type %s does not match requested type", base.EventType)
-}
-
-func parseRefundEvent(data []byte) (*RefundEvent, error) {
-	type rawRefundEvent struct {
-		EventID        string       `json:"event_id"`
-		EventTimestamp string       `json:"event_timestamp"`
-		EventType      EventType    `json:"event_type"`
-		Subtype        EventSubtype `json:"subtype"`
-		ExternalID     string       `json:"external_id"`
-		AmountRefunded string       `json:"amount_refunded"`
-		OrderID        string       `json:"order_id"`
-		TrxID          string       `json:"trx_id"`
-	}
-	var raw rawRefundEvent
-	if err := json.Unmarshal(data, &raw); err != nil {
-		return nil, err
-	}
-	parsedTime, err := time.Parse(timeFormat, raw.EventTimestamp)
-	if err != nil {
-		return nil, err
-	}
-	event := &RefundEvent{
-		EventID:        raw.EventID,
-		EventTimestamp: parsedTime,
-		EventType:      raw.EventType,
-		Subtype:        raw.Subtype,
-		ExternalID:     &raw.ExternalID,
-		refundInfo: &refundInfo{
-			AmountRefunded: raw.AmountRefunded,
-			OrderID:        raw.OrderID,
-			TrxID:          raw.TrxID,
-		},
-		Payload: RefundEventPayload{},
-	}
-	return event, nil
-}
-
-// ParseEventAuto 自动推断事件类型并解析
-// 返回类型为 any，需要使用类型断言
-func ParseEventAuto(data []byte) (any, error) {
-	var base rawEventBase
-	if err := json.Unmarshal(data, &base); err != nil {
-		return nil, err
-	}
-
-	switch base.EventType {
-	case EventTypeSubscription:
-		return parseSubscriptionEvent(data)
-	case EventTypeOrder:
-		return parseOrderEvent(data)
-	case EventTypeRefund:
-		return parseRefundEvent(data)
-	default:
-		return nil, fmt.Errorf("unknown event_type: %s", base.EventType)
-	}
 }
