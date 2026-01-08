@@ -570,10 +570,16 @@ func parseTimePointer(s string) *time.Time {
 		return nil
 	}
 	t, err := time.Parse(timeFormat, s)
+	if err == nil {
+		return &t
+	}
+	bs, err := json.Marshal(s)
 	if err != nil {
 		return nil
 	}
-	return &t
+	var t1 time.Time
+	err = json.Unmarshal(bs, &t1)
+	return &t1
 }
 
 func (raw rawMyAssetsResponse) toMyAssetsResponse() *MyAssetsResponse {
@@ -729,7 +735,17 @@ type rawEvent struct {
 
 // parseEventTimestamp 解析事件时间戳
 func parseEventTimestamp(s string) (time.Time, error) {
-	return time.Parse(timeFormat, s)
+	t, err := time.Parse(timeFormat, s)
+	if err == nil {
+		return t, nil
+	}
+	bs, err := json.Marshal(s)
+	if err != nil {
+		return time.Time{}, err
+	}
+	var t1 time.Time
+	err = json.Unmarshal(bs, &t1)
+	return t1, err
 }
 
 func ParseEvent(data []byte) (*Event, error) {
