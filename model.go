@@ -409,7 +409,8 @@ type SubscriptionResumeRequest struct {
 
 // PricePointsListRequest 价格点列表请求
 type PricePointsListRequest struct {
-	Ident *string `json:"ident,omitempty"` // 可选：按标识过滤
+	Ident        *string `json:"ident,omitempty"`         // 可选：按标识过滤
+	FeatureIdent *string `json:"feature_ident,omitempty"` // 可选：按 feature (product) 标识过滤
 }
 
 type PricePointCreateRequest struct {
