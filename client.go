@@ -109,7 +109,11 @@ func (c *Client) doRequest(endpoint string, requestBody, response any, withSecre
 	// 解析响应
 	var apiResp Response
 	if err := json.Unmarshal(respBody, &apiResp); err != nil {
-		return WrapError(err, "failed to unmarshal response")
+		wrappedErr := WrapError(err, "failed to unmarshal response")
+		if resp.StatusCode < 200 || resp.StatusCode >= 300 {
+			wrappedErr.StatusCode = resp.StatusCode
+		}
+		return wrappedErr
 	}
 
 	// 检查响应状态
@@ -128,12 +132,16 @@ func (c *Client) doRequest(endpoint string, requestBody, response any, withSecre
 			String("url", url),
 			String("req_id", apiResp.ReqID),
 			String("error", errMsg))
-		return WrapErrorf(nil, "FunnelFox API error: %s (req_id: %s)", errMsg, apiResp.ReqID)
+		err := WrapErrorf(nil, "FunnelFox API error: %s (req_id: %s)", errMsg, apiResp.ReqID)
+		err.StatusCode = resp.StatusCode
+		return err
 	}
 
 	// 如果响应状态码不是 200-299，返回错误
 	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
-		return WrapErrorf(nil, "HTTP %d: %s", resp.StatusCode, string(respBody))
+		err := WrapErrorf(nil, "HTTP %d: %s", resp.StatusCode, string(respBody))
+		err.StatusCode = resp.StatusCode
+		return err
 	}
 
 	// 解析响应数据
@@ -212,6 +220,15 @@ func (c *Client) ResumeSubscription(req SubscriptionResumeRequest) *Error {
 func (c *Client) ListPricePoints(req PricePointsListRequest) (*PricePointsListResponse, *Error) {
 	var resp PricePointsListResponse
 	if err := c.doRequest("/price_points", req, &resp, false); err != nil {
+		return nil, err
+	}
+	return &resp, nil
+}
+
+// ListFeatures 列出所有 features（offerings）。
+func (c *Client) ListFeatures(req FeaturesListRequest) (*FeaturesListResponse, *Error) {
+	var resp FeaturesListResponse
+	if err := c.doRequest("/features", req, &resp, false); err != nil {
 		return nil, err
 	}
 	return &resp, nil

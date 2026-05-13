@@ -6,8 +6,9 @@ import (
 
 // Error SDK 错误类型
 type Error struct {
-	Message string
-	Err     error
+	StatusCode int
+	Message    string
+	Err        error
 }
 
 func (e *Error) Error() string {

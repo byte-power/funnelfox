@@ -117,118 +117,143 @@ type TransactionReportRequest struct {
 
 // rawTransaction 原始交易信息（用于解析）
 type rawTransaction struct {
-	OrderID                             string  `json:"order_id"`
-	PPID                                int     `json:"pp_id"`
-	PPVersion                           int     `json:"pp_version"`
-	Status                              string  `json:"status"`
-	IsCIT                               bool    `json:"is_cit"`
-	IntegrationType                     string  `json:"integration_type"`
-	Region                              string  `json:"region"`
-	Amount                              string  `json:"amount"`
-	CurrencyCode                        string  `json:"currency_code"`
-	TrxID                               string  `json:"trx_id"`
-	PSP                                 string  `json:"psp"`
-	PSPTransactionID                    string  `json:"psp_transaction_id"`
-	AmountUSD                           string  `json:"amount_usd"`
-	IsFallback                          bool    `json:"is_fallback"`
-	PSPMerchantID                       string  `json:"psp_merchant_id"`
-	PSPTransactionType                  string  `json:"psp_transaction_type"`
-	PSPStatus                           string  `json:"psp_status"`
-	PSPDate                             string  `json:"psp_date"`
-	PSPCardTokenType                    *string `json:"psp_card_token_type"`
-	PSPReasonMessage                    *string `json:"psp_reason_message"`
-	PSPReasonType                       *string `json:"psp_reason_type"`
-	PSPReasonCode                       *string `json:"psp_reason_code"`
-	PSPReasonDeclineType                *string `json:"psp_reason_decline_type"`
-	TrxCreatedAt                        string  `json:"trx_created_at"`
-	MetaSubsID                          *string `json:"meta_subs_id"`
-	MetaSubsIteration                   *string `json:"meta_subs_iteration"`
-	MetaRetryStep                       *string `json:"meta_retry_step"`
-	MetaOneoffID                        *string `json:"meta_oneoff_id"`
-	MetaClientFFProjectID               *string `json:"meta_client_ff_project_id"`
-	MetaClientFFSessionID               *string `json:"meta_client_ff_session_id"`
-	MetaClientFFPriceID                 *string `json:"meta_client_ff_price_id"`
-	PMType                              string  `json:"pm_type"`
-	ThreeDSChallengeIssued              *bool   `json:"threeds_challenge_issued"`
-	ThreeDSProtocolVersion              *string `json:"threeds_protocol_version"`
-	ThreeDSResponseCode                 *string `json:"threeds_response_code"`
-	ThreeDSReasonCode                   *string `json:"threeds_reason_code"`
-	ThreeDSReasonText                   *string `json:"threeds_reason_text"`
-	AuthorizationType                   string  `json:"authorization_type"`
-	IsVaulted                           bool    `json:"is_vaulted"`
-	PMDataBinAccountFundingType         *string `json:"pm_data_bin_account_funding_type"`
-	PMDataBinAccountNumberType          *string `json:"pm_data_bin_account_number_type"`
-	PMDataBinIssuerName                 *string `json:"pm_data_bin_issuer_name"`
-	PMDataBinIssuerCountryCode          *string `json:"pm_data_bin_issuer_country_code"`
-	PMDataBinIssuerCurrencyCode         *string `json:"pm_data_bin_issuer_currency_code"`
-	Network                             *string `json:"network"`
-	PMDataBinPrepaidReloadableIndicator *string `json:"pm_data_bin_prepaid_reloadable_indicator"`
-	PMDataBinProductCode                *string `json:"pm_data_bin_product_code"`
-	PMDataBinProductName                *string `json:"pm_data_bin_product_name"`
-	PMDataBinProductUsageType           *string `json:"pm_data_bin_product_usage_type"`
-	PMDataBinRegionalRestriction        *string `json:"pm_data_bin_regional_restriction"`
-	PMDataExpirationDate                *string `json:"pm_data_expiration_date"`
-	PMDataFirst6                        *string `json:"pm_data_first6"`
-	PMDataLast4                         *string `json:"pm_data_last4"`
-	PMDataIsNetworkTokenized            *bool   `json:"pm_data_is_network_tokenized"`
+	OrderID                             string         `json:"order_id"`
+	PPID                                int            `json:"pp_id"`
+	PPVersion                           int            `json:"pp_version"`
+	Status                              string         `json:"status"`
+	IsCIT                               bool           `json:"is_cit"`
+	IntegrationType                     string         `json:"integration_type"`
+	Region                              string         `json:"region"`
+	Amount                              string         `json:"amount"`
+	CurrencyCode                        string         `json:"currency_code"`
+	TrxID                               string         `json:"trx_id"`
+	PSP                                 string         `json:"psp"`
+	PSPTransactionID                    string         `json:"psp_transaction_id"`
+	AmountUSD                           string         `json:"amount_usd"`
+	IsFallback                          bool           `json:"is_fallback"`
+	PSPMerchantID                       string         `json:"psp_merchant_id"`
+	PSPTransactionType                  string         `json:"psp_transaction_type"`
+	PSPStatus                           string         `json:"psp_status"`
+	PSPDate                             string         `json:"psp_date"`
+	PSPCardTokenType                    *string        `json:"psp_card_token_type"`
+	PSPReasonMessage                    *string        `json:"psp_reason_message"`
+	PSPReasonType                       *string        `json:"psp_reason_type"`
+	PSPReasonCode                       *string        `json:"psp_reason_code"`
+	PSPReasonDeclineType                *string        `json:"psp_reason_decline_type"`
+	TrxCreatedAt                        string         `json:"trx_created_at"`
+	MetaSubsID                          *string        `json:"meta_subs_id"`
+	MetaSubsIteration                   *string        `json:"meta_subs_iteration"`
+	MetaRetryStep                       *string        `json:"meta_retry_step"`
+	MetaOneoffID                        *string        `json:"meta_oneoff_id"`
+	MetaClientFFProjectID               *string        `json:"meta_client_ff_project_id"`
+	MetaClientFFSessionID               *string        `json:"meta_client_ff_session_id"`
+	MetaClientFFPriceID                 *string        `json:"meta_client_ff_price_id"`
+	MetaClient                          map[string]any `json:"meta_client"`
+	PMType                              string         `json:"pm_type"`
+	ThreeDSChallengeIssued              *bool          `json:"threeds_challenge_issued"`
+	ThreeDSProtocolVersion              *string        `json:"threeds_protocol_version"`
+	ThreeDSResponseCode                 *string        `json:"threeds_response_code"`
+	ThreeDSReasonCode                   *string        `json:"threeds_reason_code"`
+	ThreeDSReasonText                   *string        `json:"threeds_reason_text"`
+	AuthorizationType                   string         `json:"authorization_type"`
+	IsVaulted                           bool           `json:"is_vaulted"`
+	PMDataBinAccountFundingType         *string        `json:"pm_data_bin_account_funding_type"`
+	PMDataBinAccountNumberType          *string        `json:"pm_data_bin_account_number_type"`
+	PMDataBinIssuerName                 *string        `json:"pm_data_bin_issuer_name"`
+	PMDataBinIssuerCountryCode          *string        `json:"pm_data_bin_issuer_country_code"`
+	PMDataBinIssuerCurrencyCode         *string        `json:"pm_data_bin_issuer_currency_code"`
+	Network                             *string        `json:"network"`
+	PMDataBinPrepaidReloadableIndicator *string        `json:"pm_data_bin_prepaid_reloadable_indicator"`
+	PMDataBinProductCode                *string        `json:"pm_data_bin_product_code"`
+	PMDataBinProductName                *string        `json:"pm_data_bin_product_name"`
+	PMDataBinProductUsageType           *string        `json:"pm_data_bin_product_usage_type"`
+	PMDataBinRegionalRestriction        *string        `json:"pm_data_bin_regional_restriction"`
+	PMDataExpirationDate                *string        `json:"pm_data_expiration_date"`
+	PMDataFirst6                        *string        `json:"pm_data_first6"`
+	PMDataLast4                         *string        `json:"pm_data_last4"`
+	PMDataIsNetworkTokenized            *bool          `json:"pm_data_is_network_tokenized"`
+
+	rawMessage json.RawMessage `json:"-"`
+}
+
+func (raw *rawTransaction) UnmarshalJSON(data []byte) error {
+	type Alias rawTransaction
+	alias := &struct {
+		*Alias
+	}{
+		Alias: (*Alias)(raw),
+	}
+
+	if err := json.Unmarshal(data, &alias); err != nil {
+		return err
+	}
+	raw.rawMessage = cloneRawMessage(data)
+	return nil
 }
 
 // Transaction 交易信息
 type Transaction struct {
-	OrderID                             string     `json:"order_id"`
-	PPID                                int        `json:"pp_id"`
-	PPVersion                           int        `json:"pp_version"`
-	Status                              string     `json:"status"`
-	IsCIT                               bool       `json:"is_cit"`
-	IntegrationType                     string     `json:"integration_type"`
-	Region                              string     `json:"region"`
-	Amount                              string     `json:"amount"`
-	CurrencyCode                        string     `json:"currency_code"`
-	TrxID                               string     `json:"trx_id"`
-	PSP                                 string     `json:"psp"`
-	PSPTransactionID                    string     `json:"psp_transaction_id"`
-	AmountUSD                           string     `json:"amount_usd"`
-	IsFallback                          bool       `json:"is_fallback"`
-	PSPMerchantID                       string     `json:"psp_merchant_id"`
-	PSPTransactionType                  string     `json:"psp_transaction_type"`
-	PSPStatus                           string     `json:"psp_status"`
-	PSPDate                             *time.Time `json:"psp_date"`
-	PSPCardTokenType                    *string    `json:"psp_card_token_type"`
-	PSPReasonMessage                    *string    `json:"psp_reason_message"`
-	PSPReasonType                       *string    `json:"psp_reason_type"`
-	PSPReasonCode                       *string    `json:"psp_reason_code"`
-	PSPReasonDeclineType                *string    `json:"psp_reason_decline_type"`
-	TrxCreatedAt                        *time.Time `json:"trx_created_at"`
-	MetaSubsID                          *string    `json:"meta_subs_id"`
-	MetaSubsIteration                   *string    `json:"meta_subs_iteration"`
-	MetaRetryStep                       *string    `json:"meta_retry_step"`
-	MetaOneoffID                        *string    `json:"meta_oneoff_id"`
-	MetaClientFFProjectID               *string    `json:"meta_client_ff_project_id"`
-	MetaClientFFSessionID               *string    `json:"meta_client_ff_session_id"`
-	MetaClientFFPriceID                 *string    `json:"meta_client_ff_price_id"`
-	PMType                              string     `json:"pm_type"`
-	ThreeDSChallengeIssued              *bool      `json:"threeds_challenge_issued"`
-	ThreeDSProtocolVersion              *string    `json:"threeds_protocol_version"`
-	ThreeDSResponseCode                 *string    `json:"threeds_response_code"`
-	ThreeDSReasonCode                   *string    `json:"threeds_reason_code"`
-	ThreeDSReasonText                   *string    `json:"threeds_reason_text"`
-	AuthorizationType                   string     `json:"authorization_type"`
-	IsVaulted                           bool       `json:"is_vaulted"`
-	PMDataBinAccountFundingType         *string    `json:"pm_data_bin_account_funding_type"`
-	PMDataBinAccountNumberType          *string    `json:"pm_data_bin_account_number_type"`
-	PMDataBinIssuerName                 *string    `json:"pm_data_bin_issuer_name"`
-	PMDataBinIssuerCountryCode          *string    `json:"pm_data_bin_issuer_country_code"`
-	PMDataBinIssuerCurrencyCode         *string    `json:"pm_data_bin_issuer_currency_code"`
-	Network                             *string    `json:"network"`
-	PMDataBinPrepaidReloadableIndicator *string    `json:"pm_data_bin_prepaid_reloadable_indicator"`
-	PMDataBinProductCode                *string    `json:"pm_data_bin_product_code"`
-	PMDataBinProductName                *string    `json:"pm_data_bin_product_name"`
-	PMDataBinProductUsageType           *string    `json:"pm_data_bin_product_usage_type"`
-	PMDataBinRegionalRestriction        *string    `json:"pm_data_bin_regional_restriction"`
-	PMDataExpirationDate                *string    `json:"pm_data_expiration_date"`
-	PMDataFirst6                        *string    `json:"pm_data_first6"`
-	PMDataLast4                         *string    `json:"pm_data_last4"`
-	PMDataIsNetworkTokenized            *bool      `json:"pm_data_is_network_tokenized"`
+	OrderID                             string         `json:"order_id"`
+	PPID                                int            `json:"pp_id"`
+	PPVersion                           int            `json:"pp_version"`
+	Status                              string         `json:"status"`
+	IsCIT                               bool           `json:"is_cit"`
+	IntegrationType                     string         `json:"integration_type"`
+	Region                              string         `json:"region"`
+	Amount                              string         `json:"amount"`
+	CurrencyCode                        string         `json:"currency_code"`
+	TrxID                               string         `json:"trx_id"`
+	PSP                                 string         `json:"psp"`
+	PSPTransactionID                    string         `json:"psp_transaction_id"`
+	AmountUSD                           string         `json:"amount_usd"`
+	IsFallback                          bool           `json:"is_fallback"`
+	PSPMerchantID                       string         `json:"psp_merchant_id"`
+	PSPTransactionType                  string         `json:"psp_transaction_type"`
+	PSPStatus                           string         `json:"psp_status"`
+	PSPDate                             *time.Time     `json:"psp_date"`
+	PSPCardTokenType                    *string        `json:"psp_card_token_type"`
+	PSPReasonMessage                    *string        `json:"psp_reason_message"`
+	PSPReasonType                       *string        `json:"psp_reason_type"`
+	PSPReasonCode                       *string        `json:"psp_reason_code"`
+	PSPReasonDeclineType                *string        `json:"psp_reason_decline_type"`
+	TrxCreatedAt                        *time.Time     `json:"trx_created_at"`
+	MetaSubsID                          *string        `json:"meta_subs_id"`
+	MetaSubsIteration                   *string        `json:"meta_subs_iteration"`
+	MetaRetryStep                       *string        `json:"meta_retry_step"`
+	MetaOneoffID                        *string        `json:"meta_oneoff_id"`
+	MetaClientFFProjectID               *string        `json:"meta_client_ff_project_id"`
+	MetaClientFFSessionID               *string        `json:"meta_client_ff_session_id"`
+	MetaClientFFPriceID                 *string        `json:"meta_client_ff_price_id"`
+	MetaClient                          map[string]any `json:"meta_client"`
+	PMType                              string         `json:"pm_type"`
+	ThreeDSChallengeIssued              *bool          `json:"threeds_challenge_issued"`
+	ThreeDSProtocolVersion              *string        `json:"threeds_protocol_version"`
+	ThreeDSResponseCode                 *string        `json:"threeds_response_code"`
+	ThreeDSReasonCode                   *string        `json:"threeds_reason_code"`
+	ThreeDSReasonText                   *string        `json:"threeds_reason_text"`
+	AuthorizationType                   string         `json:"authorization_type"`
+	IsVaulted                           bool           `json:"is_vaulted"`
+	PMDataBinAccountFundingType         *string        `json:"pm_data_bin_account_funding_type"`
+	PMDataBinAccountNumberType          *string        `json:"pm_data_bin_account_number_type"`
+	PMDataBinIssuerName                 *string        `json:"pm_data_bin_issuer_name"`
+	PMDataBinIssuerCountryCode          *string        `json:"pm_data_bin_issuer_country_code"`
+	PMDataBinIssuerCurrencyCode         *string        `json:"pm_data_bin_issuer_currency_code"`
+	Network                             *string        `json:"network"`
+	PMDataBinPrepaidReloadableIndicator *string        `json:"pm_data_bin_prepaid_reloadable_indicator"`
+	PMDataBinProductCode                *string        `json:"pm_data_bin_product_code"`
+	PMDataBinProductName                *string        `json:"pm_data_bin_product_name"`
+	PMDataBinProductUsageType           *string        `json:"pm_data_bin_product_usage_type"`
+	PMDataBinRegionalRestriction        *string        `json:"pm_data_bin_regional_restriction"`
+	PMDataExpirationDate                *string        `json:"pm_data_expiration_date"`
+	PMDataFirst6                        *string        `json:"pm_data_first6"`
+	PMDataLast4                         *string        `json:"pm_data_last4"`
+	PMDataIsNetworkTokenized            *bool          `json:"pm_data_is_network_tokenized"`
+
+	rawMessage json.RawMessage `json:"-"`
+}
+
+func (t *Transaction) RawMessage() json.RawMessage {
+	return cloneRawMessage(t.rawMessage)
 }
 
 // rawTransactionReportResponse 原始交易报告响应
@@ -278,6 +303,7 @@ func (raw rawTransactionReportResponse) toTransactionReportResponse() *Transacti
 			MetaClientFFProjectID:               rawTx.MetaClientFFProjectID,
 			MetaClientFFSessionID:               rawTx.MetaClientFFSessionID,
 			MetaClientFFPriceID:                 rawTx.MetaClientFFPriceID,
+			MetaClient:                          rawTx.MetaClient,
 			PMType:                              rawTx.PMType,
 			ThreeDSChallengeIssued:              rawTx.ThreeDSChallengeIssued,
 			ThreeDSProtocolVersion:              rawTx.ThreeDSProtocolVersion,
@@ -301,6 +327,7 @@ func (raw rawTransactionReportResponse) toTransactionReportResponse() *Transacti
 			PMDataFirst6:                        rawTx.PMDataFirst6,
 			PMDataLast4:                         rawTx.PMDataLast4,
 			PMDataIsNetworkTokenized:            rawTx.PMDataIsNetworkTokenized,
+			rawMessage:                          rawTx.rawMessage,
 		})
 	}
 	return &res
@@ -411,6 +438,7 @@ type SubscriptionResumeRequest struct {
 type PricePointsListRequest struct {
 	Ident        *string `json:"ident,omitempty"`         // 可选：按标识过滤
 	FeatureIdent *string `json:"feature_ident,omitempty"` // 可选：按 feature (product) 标识过滤
+	CurrencyCode *string `json:"currency_code,omitempty"` // 可选：按货币代码过滤
 }
 
 type PricePointCreateRequest struct {
@@ -446,6 +474,14 @@ type FeatureCreateRequest struct {
 }
 
 type FeatureCreateResponse struct{}
+
+// FeaturesListRequest 列出所有 features 请求（空 body）。
+type FeaturesListRequest struct{}
+
+// FeaturesListResponse 列出所有 features 响应。
+type FeaturesListResponse struct {
+	Features []Feature `json:"features"`
+}
 
 // Currency 货币信息
 type Currency struct {
@@ -524,6 +560,23 @@ type rawSubscription struct {
 	CurrentPeriodStartsAt string `json:"current_period_starts_at"`
 	CurrentPeriodEndsAt   string `json:"current_period_ends_at"`
 	NextCheckAt           string `json:"next_check_at"`
+
+	rawMessage json.RawMessage `json:"-"`
+}
+
+func (raw *rawSubscription) UnmarshalJSON(data []byte) error {
+	type Alias rawSubscription
+	alias := &struct {
+		*Alias
+	}{
+		Alias: (*Alias)(raw),
+	}
+
+	if err := json.Unmarshal(data, &alias); err != nil {
+		return err
+	}
+	raw.rawMessage = cloneRawMessage(data)
+	return nil
 }
 
 type Subscription struct {
@@ -532,6 +585,27 @@ type Subscription struct {
 	CurrentPeriodStartsAt *time.Time `json:"current_period_starts_at"`
 	CurrentPeriodEndsAt   *time.Time `json:"current_period_ends_at"`
 	NextCheckAt           *time.Time `json:"next_check_at"`
+
+	rawMessage json.RawMessage `json:"-"`
+}
+
+func (s *Subscription) UnmarshalJSON(data []byte) error {
+	type Alias Subscription
+	alias := &struct {
+		*Alias
+	}{
+		Alias: (*Alias)(s),
+	}
+
+	if err := json.Unmarshal(data, &alias); err != nil {
+		return err
+	}
+	s.rawMessage = cloneRawMessage(data)
+	return nil
+}
+
+func (s *Subscription) RawMessage() json.RawMessage {
+	return cloneRawMessage(s.rawMessage)
 }
 
 type OneoffField struct {
@@ -547,12 +621,54 @@ type rawOneOffPurchase struct {
 	OneoffField `json:",inline"`
 	StartedAt   string `json:"started_at"`
 	RevokedAt   string `json:"revoked_at"`
+
+	rawMessage json.RawMessage `json:"-"`
+}
+
+func (raw *rawOneOffPurchase) UnmarshalJSON(data []byte) error {
+	type Alias rawOneOffPurchase
+	alias := &struct {
+		*Alias
+	}{
+		Alias: (*Alias)(raw),
+	}
+
+	if err := json.Unmarshal(data, &alias); err != nil {
+		return err
+	}
+	raw.rawMessage = cloneRawMessage(data)
+	return nil
+}
+
+func (raw *rawOneOffPurchase) RawMessage() json.RawMessage {
+	return cloneRawMessage(raw.rawMessage)
 }
 
 type OneOffPurchase struct {
 	OneoffField `json:",inline"`
 	StartedAt   *time.Time `json:"started_at"`
 	RevokedAt   *time.Time `json:"revoked_at"`
+
+	rawMessage json.RawMessage `json:"-"`
+}
+
+func (o *OneOffPurchase) UnmarshalJSON(data []byte) error {
+	type Alias OneOffPurchase
+	alias := &struct {
+		*Alias
+	}{
+		Alias: (*Alias)(o),
+	}
+
+	if err := json.Unmarshal(data, &alias); err != nil {
+		return err
+	}
+	o.rawMessage = cloneRawMessage(data)
+	return nil
+}
+
+func (o *OneOffPurchase) RawMessage() json.RawMessage {
+	return cloneRawMessage(o.rawMessage)
 }
 
 // rawMyAssetsResponse 用户资产响应
@@ -583,6 +699,10 @@ func parseTimePointer(s string) *time.Time {
 	return &t1
 }
 
+func cloneRawMessage(data json.RawMessage) json.RawMessage {
+	return append(json.RawMessage(nil), data...)
+}
+
 func (raw rawMyAssetsResponse) toMyAssetsResponse() *MyAssetsResponse {
 	var res MyAssetsResponse
 	for _, rawSub := range raw.Subscriptions {
@@ -596,6 +716,7 @@ func (raw rawMyAssetsResponse) toMyAssetsResponse() *MyAssetsResponse {
 			CurrentPeriodStartsAt: currStart,
 			CurrentPeriodEndsAt:   currEnd,
 			NextCheckAt:           nextCheck,
+			rawMessage:            rawSub.rawMessage,
 		})
 	}
 
@@ -606,6 +727,7 @@ func (raw rawMyAssetsResponse) toMyAssetsResponse() *MyAssetsResponse {
 			OneoffField: rawOneoff.OneoffField,
 			StartedAt:   startedAt,
 			RevokedAt:   revokedAt,
+			rawMessage:  rawOneoff.rawMessage,
 		})
 	}
 	return &res
@@ -632,6 +754,26 @@ type OrderField struct {
 	DeclineReason        *any           `json:"decline_reason"`
 	RetryStep            *any           `json:"retry_step"`
 	PSP                  *string        `json:"psp"`
+
+	rawMessage json.RawMessage `json:"-"`
+}
+
+func (o *OrderField) UnmarshalJSON(data []byte) error {
+	type Alias OrderField
+	alias := &struct {
+		*Alias
+	}{
+		Alias: (*Alias)(o),
+	}
+	if err := json.Unmarshal(data, &alias); err != nil {
+		return err
+	}
+	o.rawMessage = cloneRawMessage(data)
+	return nil
+}
+
+func (o *OrderField) RawMessage() json.RawMessage {
+	return cloneRawMessage(o.rawMessage)
 }
 
 type rawOrder struct {
@@ -710,11 +852,13 @@ type RefundInfoField struct {
 type RawRefundInfo struct {
 	RefundInfoField `json:",inline"`
 	CreatedAt       string `json:"created_at"`
+	RefundAt        string `json:"refund_at"`
 }
 
 type RefundInfo struct {
 	RefundInfoField `json:",inline"`
 	CreatedAt       *time.Time `json:"created_at"`
+	RefundAt        *time.Time `json:"refund_at"`
 }
 
 type rawEvent struct {
@@ -778,6 +922,7 @@ func ParseEvent(data []byte) (*Event, error) {
 			CurrentPeriodStartsAt: parseTimePointer(raw.Subscription.CurrentPeriodStartsAt),
 			CurrentPeriodEndsAt:   parseTimePointer(raw.Subscription.CurrentPeriodEndsAt),
 			NextCheckAt:           parseTimePointer(raw.Subscription.NextCheckAt),
+			rawMessage:            raw.Subscription.rawMessage,
 		}
 	}
 	if raw.Order != nil {
@@ -791,12 +936,14 @@ func ParseEvent(data []byte) (*Event, error) {
 			OneoffField: raw.Oneoff.OneoffField,
 			StartedAt:   parseTimePointer(raw.Oneoff.StartedAt),
 			RevokedAt:   parseTimePointer(raw.Oneoff.RevokedAt),
+			rawMessage:  raw.Oneoff.rawMessage,
 		}
 	}
 	if raw.RawRefundInfo != nil {
 		event.RefundInfo = &RefundInfo{
 			RefundInfoField: raw.RawRefundInfo.RefundInfoField,
 			CreatedAt:       parseTimePointer(raw.RawRefundInfo.CreatedAt),
+			RefundAt:        parseTimePointer(raw.RawRefundInfo.RefundAt),
 		}
 	}
 
