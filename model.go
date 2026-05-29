@@ -758,20 +758,6 @@ type OrderField struct {
 	rawMessage json.RawMessage `json:"-"`
 }
 
-func (o *OrderField) UnmarshalJSON(data []byte) error {
-	type Alias OrderField
-	alias := &struct {
-		*Alias
-	}{
-		Alias: (*Alias)(o),
-	}
-	if err := json.Unmarshal(data, &alias); err != nil {
-		return err
-	}
-	o.rawMessage = cloneRawMessage(data)
-	return nil
-}
-
 func (o *OrderField) RawMessage() json.RawMessage {
 	return cloneRawMessage(o.rawMessage)
 }
@@ -779,12 +765,40 @@ func (o *OrderField) RawMessage() json.RawMessage {
 type rawOrder struct {
 	OrderField `json:",inline"`
 	CreatedAt  string `json:"created_at"`
+
+	rawMessage json.RawMessage `json:"-"`
+}
+
+func (raw *rawOrder) UnmarshalJSON(data []byte) error {
+	type Alias rawOrder
+	alias := &struct {
+		*Alias
+	}{
+		Alias: (*Alias)(raw),
+	}
+
+	if err := json.Unmarshal(data, &alias); err != nil {
+		return err
+	}
+	raw.rawMessage = cloneRawMessage(data)
+	return nil
 }
 
 // Order 订单信息
 type Order struct {
 	OrderField `json:",inline"`
 	CreatedAt  *time.Time `json:"created_at"`
+}
+
+func (o *Order) UnmarshalJSON(data []byte) error {
+	var raw rawOrder
+	if err := json.Unmarshal(data, &raw); err != nil {
+		return err
+	}
+	o.OrderField = raw.OrderField
+	o.CreatedAt = parseTimePointer(raw.CreatedAt)
+	o.OrderField.rawMessage = raw.rawMessage
+	return nil
 }
 
 type EventType string
@@ -926,8 +940,10 @@ func ParseEvent(data []byte) (*Event, error) {
 		}
 	}
 	if raw.Order != nil {
+		orderField := raw.Order.OrderField
+		orderField.rawMessage = raw.Order.rawMessage
 		event.Order = &Order{
-			OrderField: raw.Order.OrderField,
+			OrderField: orderField,
 			CreatedAt:  parseTimePointer(raw.Order.CreatedAt),
 		}
 	}

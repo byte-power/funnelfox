@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"testing"
+	"time"
 )
 
 func TestTransactionReportPreservesMetaClientAndRawMessage(t *testing.T) {
@@ -89,6 +90,46 @@ func TestParseEventPreservesRawMessages(t *testing.T) {
 	assertRawMessageClone(t, event.Subscription.RawMessage, []byte(`"subs_id"`))
 	assertRawMessageClone(t, event.Order.RawMessage, []byte(`"order_id"`))
 	assertRawMessageClone(t, event.Oneoff.RawMessage, []byte(`"oneoff_id"`))
+
+	expectedCreatedAt, err := time.Parse(timeFormat, "2026-01-02T03:04:05.000000")
+	if err != nil {
+		t.Fatalf("parse expected created_at: %v", err)
+	}
+	if event.Order.CreatedAt == nil {
+		t.Fatal("expected order created_at to be set")
+	}
+	if !event.Order.CreatedAt.Equal(expectedCreatedAt) {
+		t.Fatalf("expected order created_at %v, got %v", expectedCreatedAt, *event.Order.CreatedAt)
+	}
+}
+
+func TestOrderUnmarshalJSONCreatedAt(t *testing.T) {
+	payload := []byte(`{
+		"order_id": "ord_1",
+		"amount": "10.00",
+		"currency_code": "USD",
+		"external_id": "ext_1",
+		"user_uuid": "user_1",
+		"status": "settled",
+		"created_at": "2026-01-02T03:04:05.000000"
+	}`)
+
+	var order Order
+	if err := json.Unmarshal(payload, &order); err != nil {
+		t.Fatalf("unmarshal order: %v", err)
+	}
+
+	expectedCreatedAt, err := time.Parse(timeFormat, "2026-01-02T03:04:05.000000")
+	if err != nil {
+		t.Fatalf("parse expected created_at: %v", err)
+	}
+	if order.CreatedAt == nil {
+		t.Fatal("expected order created_at to be set")
+	}
+	if !order.CreatedAt.Equal(expectedCreatedAt) {
+		t.Fatalf("expected order created_at %v, got %v", expectedCreatedAt, *order.CreatedAt)
+	}
+	assertRawMessageContains(t, order.RawMessage(), []byte(`"created_at"`))
 }
 
 func assertRawMessageContains(t *testing.T, raw json.RawMessage, fragment []byte) {
