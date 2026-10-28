@@ -544,13 +544,14 @@ type MyAssetsRequest struct {
 }
 
 type SubscriptionField struct {
-	SubsID               string         `json:"subs_id"`
-	IsActive             bool           `json:"is_active"`
-	PricePoint           PricePoint     `json:"price_point"`
-	Status               []string       `json:"status"`
-	AvailableActions     []string       `json:"available_actions"`
-	InitialOrderMetadata map[string]any `json:"initial_order_metadata"`
-	Iteration            int            `json:"iteration"`
+	SubsID                  string         `json:"subs_id"`
+	IsActive                bool           `json:"is_active"`
+	PricePoint              PricePoint     `json:"price_point"`
+	Status                  []string       `json:"status"`
+	AvailableActions        []string       `json:"available_actions"`
+	InitialOrderMetadata    map[string]any `json:"initial_order_metadata"`
+	Iteration               int            `json:"iteration"`
+	UnusedPremiumAfterPause *int           `json:"unused_premium_after_pause"`
 }
 
 // rawSubscription 订阅信息
@@ -560,6 +561,7 @@ type rawSubscription struct {
 	CurrentPeriodStartsAt string `json:"current_period_starts_at"`
 	CurrentPeriodEndsAt   string `json:"current_period_ends_at"`
 	NextCheckAt           string `json:"next_check_at"`
+	NextPaymentAt         string `json:"next_payment_at"`
 
 	rawMessage json.RawMessage `json:"-"`
 }
@@ -585,6 +587,7 @@ type Subscription struct {
 	CurrentPeriodStartsAt *time.Time `json:"current_period_starts_at"`
 	CurrentPeriodEndsAt   *time.Time `json:"current_period_ends_at"`
 	NextCheckAt           *time.Time `json:"next_check_at"`
+	NextPaymentAt         *time.Time `json:"next_payment_at"`
 
 	rawMessage json.RawMessage `json:"-"`
 }
@@ -710,12 +713,14 @@ func (raw rawMyAssetsResponse) toMyAssetsResponse() *MyAssetsResponse {
 		currStart := parseTimePointer(rawSub.CurrentPeriodStartsAt)
 		currEnd := parseTimePointer(rawSub.CurrentPeriodEndsAt)
 		nextCheck := parseTimePointer(rawSub.NextCheckAt)
+		nextPayment := parseTimePointer(rawSub.NextPaymentAt)
 		res.Subscriptions = append(res.Subscriptions, Subscription{
 			SubscriptionField:     rawSub.SubscriptionField,
 			StartedAt:             startedAt,
 			CurrentPeriodStartsAt: currStart,
 			CurrentPeriodEndsAt:   currEnd,
 			NextCheckAt:           nextCheck,
+			NextPaymentAt:         nextPayment,
 			rawMessage:            rawSub.rawMessage,
 		})
 	}
@@ -754,6 +759,7 @@ type OrderField struct {
 	DeclineReason        *any           `json:"decline_reason"`
 	RetryStep            *any           `json:"retry_step"`
 	PSP                  *string        `json:"psp"`
+	PSPStoreID           *string        `json:"psp_store_id"`
 
 	rawMessage json.RawMessage `json:"-"`
 }
@@ -831,6 +837,7 @@ const (
 
 	EventSubtypeOrderSettled  EventSubtype = "settled"
 	EventSubtypeOrderDeclined EventSubtype = "declined"
+	EventSubtypeOrderSuccess  EventSubtype = "success"
 
 	EventSubtypeOneoffGranted EventSubtype = "granted"
 	EventSubtypeOneoffRevoked EventSubtype = "revoked"
@@ -848,8 +855,9 @@ type Event struct {
 	IsLivemode     *bool        `json:"is_livemode,omitempty"`
 	*RefundInfo    `json:",inline,omitempty"`
 	User           struct {
-		Email      string `json:"email"`
-		ExternalID string `json:"external_id"`
+		Email        string   `json:"email"`
+		ExternalID   string   `json:"external_id"`
+		EmailAliases []string `json:"email_aliases"`
 	} `json:"user"`
 	Subscription *Subscription   `json:"subscription"`
 	Order        *Order          `json:"order"`
@@ -884,8 +892,9 @@ type rawEvent struct {
 	IsLivemode     *bool        `json:"is_livemode,omitempty"`
 	*RawRefundInfo `json:",inline,omitempty"`
 	User           struct {
-		Email      string `json:"email"`
-		ExternalID string `json:"external_id"`
+		Email        string   `json:"email"`
+		ExternalID   string   `json:"external_id"`
+		EmailAliases []string `json:"email_aliases"`
 	} `json:"user"`
 	Subscription *rawSubscription   `json:"subscription"`
 	Order        *rawOrder          `json:"order"`
@@ -936,6 +945,7 @@ func ParseEvent(data []byte) (*Event, error) {
 			CurrentPeriodStartsAt: parseTimePointer(raw.Subscription.CurrentPeriodStartsAt),
 			CurrentPeriodEndsAt:   parseTimePointer(raw.Subscription.CurrentPeriodEndsAt),
 			NextCheckAt:           parseTimePointer(raw.Subscription.NextCheckAt),
+			NextPaymentAt:         parseTimePointer(raw.Subscription.NextPaymentAt),
 			rawMessage:            raw.Subscription.rawMessage,
 		}
 	}
